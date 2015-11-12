@@ -1,2 +1,6 @@
 #Ignore compiled python code 
 *.pyc
+
+#Ignore pycharm shenanigans
+*.idea
+.idea
