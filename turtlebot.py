@@ -9,6 +9,7 @@ import time
 import rospy
 import tf
 import tools
+import math
 
 
 # Subclass Information
@@ -85,9 +86,11 @@ class turtlebot(log_base,communicator):
         pos,quat = self._quatFromMsg(msg)
         self._x, self._y, self._z = pos
         self._quatx, self._quaty, self._quatz, self._quatw = quat
+        self._quat = (self._quatx, self._quaty, self._quatz, self._quatw)
 
 
-    """ General Movement """
+    """------------------General Movement------------------"""
+    """ Movement Helpers """
     def _stopRobot(self):
         """  Publishes a stop message to the robot
         :return:None
@@ -112,7 +115,7 @@ class turtlebot(log_base,communicator):
         ## stop Robot
         self._stopRobot()
         return
-
+    """ Big Movement Functions """
     def driveStraight(self, speed, distance):
         """
         THis takes in a speed and distance and moves in the facing direction
@@ -158,6 +161,46 @@ class turtlebot(log_base,communicator):
             arrived = dist_so_far >= abs(distance)
 
         self._stopRobot()
+    def rotate(self, angle, speed = 0.05):
+        """
+        :param angle: <int or double> the angle the robot should turn in degrees
+        :param speed: <int or double> The speed at which the robot should rotate
+        :return: None
+        """
+        ## Error Checking Angle:
+        if angle == 0: return
+        else: done = False
+
+        angle_to_travel_rad = math.radians(angle)
+        start_theta_rad = tools.normalizeTheta(self._quat)
+
+        while not done and (not rospy.is_shutdown()):
+            current_theta_rad = tools.normalizeTheta(self._quat)
+
+            # Calculates the difference in the thetas
+            # This keeps track of
+            if start_theta_rad > current_theta_rad and start_theta_rad > math.pi and current_theta_rad < math.pi:
+                d_theta = ((2*math.pi) - start_theta_rad) + current_theta_rad
+            elif start_theta_rad < current_theta_rad and start_theta_rad < math.pi and current_theta_rad > math.pi:
+                d_theta = ((2*math.pi) - current_theta_rad) + start_theta_rad
+            else:
+                d_theta = start_theta_rad - current_theta_rad
+
+            ## If you're within 0.1 Radian stop
+            if angle_to_travel_rad - d_theta < 0.1:
+                done = True
+                self._stopRobot()
+            else:
+                if (angle > 0):
+                    self._spinWheels(speed,-speed,.1)
+                else:
+                    self._spinWheels(-speed,speed,.1)
+
+
+
+
+
+
 
 
     def run(self):
@@ -167,6 +210,7 @@ class turtlebot(log_base,communicator):
 
     def main(self):
         try:
+            self.rotate(90)
             self.driveStraight(1,1)
         except rospy.ROSInterruptException:
             pass
