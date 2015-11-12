@@ -1,0 +1,1 @@
+11-12 11:05 root         INFO     Logger started for: Test
