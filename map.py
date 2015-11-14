@@ -1,5 +1,8 @@
 __author__ = 'Odell Dotson'
 
+# Subclass Information
+from log_base import log_base
+from communicator import communicator
 
 class map(log_base):
     def __init__(self):
@@ -12,21 +15,23 @@ class map(log_base):
         pass
         #  Create a map, empty of objects, places the robot at 0,0 initially
 
+    def createPath(self):
+        pass
+        #  Get data from (somewhere?) and create a path (on top of the map/using the map) using A*
+
 
     def updateMap(self):
         pass
         #  Read in the robot's most recent position
         #  Update the map based on new obsticles that the robot sees.
-        #  Perhaps a queue of "newly seen" things sensed by the robot, that the map filters in and creates new targets...
+        #  Perhaps a queue of "newly seen" things sensed by the robot that the map filters in and creates new targets...
         #  ... to send in.
 
 
-
-
-
-    def sendNextNode(self):
+    def nextNode(self):
         pass
-        #  Send the next node from our A*?
+        #  Robot calls this against map to get the next target once it has decided it is close enough to the ...
+        #  ... previous target (or enough time has passed?)
 
 
 
