@@ -3,7 +3,9 @@ __author__ = 'Odell Dotson'
 import rospy
 import tools
 import Queue
+from nav_msgs.msg import GridCells
 from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import Point
 
 # Subclass Information
 from log_base import log_base
@@ -13,8 +15,7 @@ class map(log_base):
     def __init__(self, name):
         self._name_ = name
         self._map_sub = rospy.Subscriber('/map', OccupancyGrid , self._updateMap)
-        self.initMap()
-        pass
+        self._color_test = rospy.Publisher('/testPub', GridCells, self._testColor,queue_size=1)
 
     def initMap(self):
         pass
@@ -23,13 +24,36 @@ class map(log_base):
     def createPath(self):
         pass
         #  Get data from (somewhere?) and create a path (on top of the map/using the map) using A*
+    def _testColor(self):
+        print "In Test color"
+        grid = self._map
 
+        k=0
+        cells = GridCells()
+        cells.header.frame_id = 'map'
+        cells.cell_width = 0.3 # edit for grid size .3 for simple map
+        cells.cell_height = 0.3 # edit for grid size
+
+        for i in range(1,self._height): #height should be set to hieght of grid
+            k=k+1
+            for j in range(1,self._width): #height should be set to hieght of grid
+                k=k+1
+                #print k # used for debugging
+                if (grid[k] == 100):
+                    point=Point()
+                    point.x=j*0.3 # edit for grid size
+                    point.y=i*0.3 # edit for grid size
+                    point.z=0
+                    cells.cells.append(point)
+        #print cells # used for debugging
+        self._color_test.publish(cells)
 
     def _updateMap(self, msg):
         self._map=msg.data
         self._height=msg.info.height
         self._width=msg.info.width
         self._pose=msg.info.origin # Do we actually need the pose? If not, remove
+        self._testColor()
         #print self._map
 
     def storeGoal(self, msg):

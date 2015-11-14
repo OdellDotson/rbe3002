@@ -243,6 +243,7 @@ class turtlebot(log_base,communicator):
             self.driveStraight(1,1)
             p,q = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
             print p,q"""
+            rospy.spin()
         except rospy.ROSInterruptException:
             pass
 
