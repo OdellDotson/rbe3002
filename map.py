@@ -36,6 +36,8 @@ class map(log_base):
         self.x = msg.point.x
         self.y = msg.point.y
         self.theta=tools.normalizeTheta((msg.quaternion.x,msg.quaternion.y,msg.quaternion.z,msg.quaternion.w))
+        goal = (self.x, self.y)
+        goalTheta = (self.x, self.y, self.theta)
 
     def getNeightbors(self,x,y,threshold=99):#Only returns good neighbors
         goodNeighbors = []
@@ -55,7 +57,26 @@ class map(log_base):
 
         came_from = {}
         cost_so_far = {}
-        
+
+        came_from[start] = None
+        cost_so_far[start] = 0
+
+        while not frontier.empty():
+            current = frontier.get()
+
+            if current == goal:
+                break #We're there!
+
+            x,y = current
+            for next in self.getNeighbors(x,y):
+                cost_next = cost_so_far[current] + tools.distFormula(next, current)
+                if next not in cost_so_far or cost_so_far[next] > cost_next:
+                    cost_so_far[next] = cost_next
+                    frontier.put(cost_next + tools.distFormula(next, goal), next)
+                    came_from[next] = current
+
+            
+
 
 
 
