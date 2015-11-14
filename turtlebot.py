@@ -19,7 +19,7 @@ from map import map
 
 #Message Types
 from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
+from nav_msgs.msg import Odometry, GridCells
 from geometry_msgs.msg import PoseStamped
 
 class turtlebot(log_base,communicator):
@@ -37,11 +37,13 @@ class turtlebot(log_base,communicator):
         ## Loggers and node information
         log_base.__init__(self,name)
         rospy.init_node(name)
-        self._name_ = name
         self.map = map(name+"Map")
+        self._name_ = name
+
 
         ## Pub/Sub information
         self._vel_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size=1)
+
 
         self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
         self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.map.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
@@ -60,6 +62,7 @@ class turtlebot(log_base,communicator):
 
         #### Private robot Information
         self._wheelbase = wheelbase
+
 
 
 
@@ -231,7 +234,9 @@ class turtlebot(log_base,communicator):
 
     def main(self):
         try:
-            Map = map("map")
+            while not rospy.is_shutdown():
+                rospy.sleep(0.1)
+                continue
             """try:
                 self._odom_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(4.0))
             except tf.Exception:
@@ -245,7 +250,6 @@ class turtlebot(log_base,communicator):
             self.driveStraight(1,1)
             p,q = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
             print p,q"""
-            rospy.spin()
         except rospy.ROSInterruptException:
             pass
 

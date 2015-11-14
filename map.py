@@ -15,7 +15,15 @@ class map(log_base):
     def __init__(self, name):
         self._name_ = name
         self._map_sub = rospy.Subscriber('/map', OccupancyGrid , self._updateMap)
-        self._color_test = rospy.Publisher('/testPub', GridCells, self._testColor,queue_size=1)
+        self._color_test = rospy.Publisher('/testPub', GridCells, queue_size=1)
+        self._map = None
+        while self._map is None:
+            rospy.sleep(0.1)
+            continue
+
+        # for i in xrange(20):
+        self._testColor()
+
 
     def initMap(self):
         pass
@@ -33,6 +41,7 @@ class map(log_base):
         cells.header.frame_id = 'map'
         cells.cell_width = 0.3 # edit for grid size .3 for simple map
         cells.cell_height = 0.3 # edit for grid size
+        some_list = []
 
         for i in range(1,self._height): #height should be set to hieght of grid
             k=k+1
@@ -44,8 +53,13 @@ class map(log_base):
                     point.x=j*0.3 # edit for grid size
                     point.y=i*0.3 # edit for grid size
                     point.z=0
-                    cells.cells.append(point)
+                    some_list.append(point)
+        cells.cells = some_list
         #print cells # used for debugging
+        print "Publishing"
+        print cells
+        print self._color_test
+
         self._color_test.publish(cells)
 
     def _updateMap(self, msg):
