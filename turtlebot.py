@@ -15,6 +15,7 @@ import math
 # Subclass Information
 from log_base import log_base
 from communicator import communicator
+from map import map
 
 #Message Types
 from geometry_msgs.msg import Twist
@@ -228,7 +229,8 @@ class turtlebot(log_base,communicator):
 
     def main(self):
         try:
-            try:
+            Map = map("map")
+            """try:
                 self._odom_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(4.0))
             except tf.Exception:
                 print "Exception thrown"
@@ -240,7 +242,7 @@ class turtlebot(log_base,communicator):
             print p,q
             self.driveStraight(1,1)
             p,q = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
-            print p,q
+            print p,q"""
         except rospy.ROSInterruptException:
             pass
 
