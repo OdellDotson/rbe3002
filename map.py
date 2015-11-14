@@ -98,18 +98,17 @@ class map(log_base):
                     cost_so_far[next] = cost_next
                     frontier.put(cost_next + tools.distFormula(next, goal), next)
                     came_from[next] = current
+        return came_from
 
-            
-
-
-
-
-
-    def nextNode(self):
-        pass
-        #  Robot calls this against map to get the next target once it has decided it is close enough to the ...
-        #  ... previous target (or enough time has passed?)
-
+    def getPath(self, start):
+        came_from = aStarSearch(start)#A*, create path of nodes, returns the came_from dictionary
+        path = []
+        prev = came_from[goal]
+        path.append(prev)
+        while current is not start:
+            current = came_from[prev]
+            path.append(current)
+        return path.reverse()
 
 
     def main(self):
