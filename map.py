@@ -2,6 +2,7 @@ __author__ = 'Odell Dotson'
 
 import rospy
 import tools
+import Queue
 from nav_msgs.msg import OccupancyGrid
 
 # Subclass Information
@@ -47,6 +48,14 @@ class map(log_base):
                     if(self._data[i][j] < threshold):#If the neighbor is a valid place to go to
                         goodNeighbors.append((i,j))
         return goodNeighbors #State farm joke goes here
+
+    def aStarSearch(self, start):
+        frontier = Queue.PriorityQueue
+        frontier.put(0, start)
+
+        came_from = {}
+        cost_so_far = {}
+        
 
 
 
