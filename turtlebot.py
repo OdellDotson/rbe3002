@@ -38,11 +38,13 @@ class turtlebot(log_base,communicator):
         log_base.__init__(self,name)
         rospy.init_node(name)
         self._name_ = name
+        self.map = map(name+"Map")
 
         ## Pub/Sub information
         self._vel_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size=1)
 
         self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
+        self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.map.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
         # self._map_sub = rospy.Subscriber('/map',PoseStamped,self.mapCallback, queue_size=3)
         # self._bmp_sub = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, turtlebot.setBumper, queue_size=3)
 

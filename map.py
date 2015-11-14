@@ -87,14 +87,6 @@ class map(log_base):
         return path.reverse()
 
 
-
-    def nextNode(self):
-        pass
-        #  Robot calls this against map to get the next target once it has decided it is close enough to the ...
-        #  ... previous target (or enough time has passed?)
-
-
-
     def main(self):
         try:
             pass
