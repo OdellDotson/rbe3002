@@ -13,21 +13,23 @@ import math
 
 
 # Subclass Information
-from log_base import log_base
 from communicator import communicator
 from map import map
+
+import logging
 
 #Message Types
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry, GridCells
 from geometry_msgs.msg import PoseStamped
 
-class turtlebot(log_base,communicator):
+class turtlebot(communicator):
     def __init__(self, name, wheelbase=0.352):
         """
         :param name: <string> that will be the 'name'.log file and the name of the node created
         :return: None
         """
+
 
         """ SETUP::
             1) will instantiate the base logging class and start the node
@@ -35,12 +37,29 @@ class turtlebot(log_base,communicator):
             3) ...
         """
         ## Loggers and node information
-        log_base.__init__(self,name)
         rospy.init_node(name)
+        """ Setting up the logger first """
+        logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename="Whatislove.txt",
+                    filemode='w')
+        logger = logging.getLogger(__name__)
+        logger.info("Logger started for: "+name)
+        logger.info("Why is this doing this... :( ")
+
+
+        logger.setLevel(logging.INFO)
+        logger.info("Node created with name: "+name)
+        logger.info("Creating Map Next")
         self.map = map(name+"Map")
         self._name_ = name
+        logger.info("Map Created")
 
 
+
+
+        logger.info("Creating Publishers and Subscribers")
         ## Pub/Sub information
         self._vel_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size=1)
 
@@ -50,6 +69,8 @@ class turtlebot(log_base,communicator):
         # self._map_sub = rospy.Subscriber('/map',PoseStamped,self.mapCallback, queue_size=3)
         # self._bmp_sub = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, turtlebot.setBumper, queue_size=3)
 
+
+        logger.info("Creating TF Listeners and Broadcasters")
         #### Private variables that get updated by callbacks.
         ## Odom Handlers ##
         self._odom_list = tf.TransformListener()
@@ -63,12 +84,12 @@ class turtlebot(log_base,communicator):
         #### Private robot Information
         self._wheelbase = wheelbase
 
-
-
-
         ## After creation, wait 1 second in order to ensure that your
         self.sleeper = rospy.Duration(1)
         rospy.sleep(self.sleeper)
+        logger.info("Instantiation Complete.")
+        print "Complete"
+
 
     """ Overridden or SubUsed functions """
     def _publishTwist(self, u, w):
@@ -234,8 +255,12 @@ class turtlebot(log_base,communicator):
 
     def main(self):
         try:
+            i = 0
             while not rospy.is_shutdown():
                 rospy.sleep(0.1)
+                i = i+1
+                if i > 50:
+                    return
                 continue
             """try:
                 self._odom_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(4.0))
@@ -255,6 +280,6 @@ class turtlebot(log_base,communicator):
 
 
 
-Turtle = turtlebot("Test")
+Turtle = turtlebot("HulkHogan")
 Turtle.main()
 

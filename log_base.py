@@ -16,6 +16,7 @@ class log_base():
 
 
     def info(self,message):
+        print "In Info"
         logging.info(message)
 
     def debug(self,message):

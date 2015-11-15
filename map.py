@@ -7,23 +7,35 @@ from nav_msgs.msg import GridCells
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Point
 
+# import logging
+
 # Subclass Information
-from log_base import log_base
 from communicator import communicator
 
-class map(log_base):
+class map():
     def __init__(self, name):
+        self._map = None ## initialized first to avoid hanging
         self._name_ = name
+
         self._map_sub = rospy.Subscriber('/map', OccupancyGrid , self._updateMap)
-        self._color_test = rospy.Publisher('/testPub', GridCells, queue_size=1)
-        self._map = None
+
+        self._walls = rospy.Publisher('/walls', GridCells, queue_size=1)
+        self._explored_nodes = rospy.Publisher('/explored_nodes', GridCells, queue_size=1)
+        self._not_explored_nodes = rospy.Publisher('/not_explored_nodes', GridCells, queue_size=1)
+        self._path = rospy.Publisher('/path', GridCells, queue_size=1)
+
+        # logging.info("Waiting for the _map to contain valid informaiton.")
+
         while self._map is None:
             rospy.sleep(0.1)
+            print "Map is none..."
             continue
 
-        # for i in xrange(20):
-        self._testColor()
-
+        # logging.info("Begining to populate the colored map")
+        for i in xrange(20):
+            self._start_populate()
+        # logging.info("Colored map populated 20x to ensure no ROS errors")
+        print "Exiting"
 
     def initMap(self):
         pass
@@ -32,42 +44,48 @@ class map(log_base):
     def createPath(self):
         pass
         #  Get data from (somewhere?) and create a path (on top of the map/using the map) using A*
-    def _testColor(self):
-        print "In Test color"
+    def _start_populate(self, threshold =99):
+        # logging.info("Configuring for publishing")
         grid = self._map
 
-        k=0
-        cells = GridCells()
-        cells.header.frame_id = 'map'
-        cells.cell_width = 0.3 # edit for grid size .3 for simple map
-        cells.cell_height = 0.3 # edit for grid size
-        some_list = []
+        wall_cells = GridCells()
+        wall_cells.header.frame_id = 'map'
+        wall_cells.cell_width = 0.3; wall_cells.cell_height = 0.3
 
+        not_explored = GridCells()
+        not_explored.header.frame_id = 'map'
+        not_explored.cell_width = 0.3; not_explored.cell_height = 0.3
+
+        wall_list =[]; not_explored_list = []
+
+        k=0
         for i in range(1,self._height): #height should be set to hieght of grid
             k=k+1
             for j in range(1,self._width): #height should be set to hieght of grid
                 k=k+1
-                #print k # used for debugging
-                if (grid[k] == 100):
-                    point=Point()
-                    point.x=j*0.3 # edit for grid size
-                    point.y=i*0.3 # edit for grid size
-                    point.z=0
-                    some_list.append(point)
-        cells.cells = some_list
-        #print cells # used for debugging
-        print "Publishing"
-        print cells
-        print self._color_test
 
-        self._color_test.publish(cells)
+                point=Point()
+                point.x=j*0.3
+                point.y=i*0.3
+                point.z=0
+
+                if (grid[k] == 100):
+                    wall_list.append(point)
+                else:
+                    not_explored_list.append(point)
+        wall_cells.cells = wall_list
+        not_explored.cells = not_explored_list
+
+        self._walls.publish(wall_cells)
+        rospy.sleep(0.1)
+        self._not_explored_nodes.publish(not_explored)
+        rospy.sleep(0.1)
 
     def _updateMap(self, msg):
         self._map=msg.data
         self._height=msg.info.height
         self._width=msg.info.width
         self._pose=msg.info.origin # Do we actually need the pose? If not, remove
-        self._testColor()
         #print self._map
 
     def storeGoal(self, msg):
