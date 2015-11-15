@@ -23,6 +23,7 @@ class map():
         self.explored_nodes_list = []
         self.not_explored_nodes_list = []
         self.path_list = []
+        self.waypoint_list = []
 
 
         self._map_sub = rospy.Subscriber('/map', OccupancyGrid , self._updateMap)
@@ -30,6 +31,7 @@ class map():
         self._walls = rospy.Publisher('/walls', GridCells, queue_size=1)
         self._explored_nodes = rospy.Publisher('/explored_nodes', GridCells, queue_size=1)
         self._not_explored_nodes = rospy.Publisher('/not_explored_nodes', GridCells, queue_size=1)
+        self._waypoints = rospy.Publisher('/waypoints', GridCells, queue_size=1)
         self._path = rospy.Publisher('/path', GridCells, queue_size=1)
 
         self._map_list = tf.TransformListener()
@@ -120,7 +122,9 @@ class map():
             self._path.publish(tools.makeGridCells('/map',0.3,0.3,self.path_list))
         if path:
             self._path.publish(tools.makeGridCells('/map',0.3,0.3,self.path_list))
-        self._explored_nodes.publish(tools.makeGridCells('/map',0.3,0.3,self.explored_nodes_list))
+        for i in xrange(10):
+            self._explored_nodes.publish(tools.makeGridCells('/map',0.3,0.3,self.explored_nodes_list))
+            self._waypoints.publish(tools.makeGridCells('/map',0.3,0.3,self.waypoint_list))
 
 
 
@@ -131,6 +135,11 @@ class map():
         :param msg:
         :return:
         """
+        self.explored_nodes_list = []
+        self.waypoint_list = []
+        self.path_list = []
+
+
         (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
         self.current_x,self.current_y, self.current_z = p
         self.current_theta = tools.normalizeTheta(q)
@@ -232,7 +241,6 @@ class map():
         if frontier.empty():
             print "It's empty!!!!!"
             rospy.sleep(1)
-        print came_from.keys()
         return came_from
 
 
@@ -253,8 +261,9 @@ class map():
 
         #Append the very last node, so that we have a complete path.
         nodePath.append(pathToNodify[len(pathToNodify)-1])
-
-        print nodePath
+        self.waypoint_list = tools.publishListfromTouple(nodePath)
+        self._repaint_map(path=True)
+        # print nodePath
         return nodePath
 
 
