@@ -3,6 +3,9 @@ __author__ = 'Troy Hughes'
 import math
 import tf
 
+from nav_msgs.msg import GridCells
+from geometry_msgs.msg import Point
+
 
 def distFormula(point1, point2):
     """
@@ -34,3 +37,28 @@ def normalizeTheta(quaternian_touple):
     else: normalized_theta = (math.pi + (un_normalized_theta)) + math.pi
 
     return normalized_theta
+
+def makeGridCells(name, width, height, grid_cells=[]):
+    """
+
+    :param name: of the topic on which the grid cells are from
+    :param width: of a grid cell
+    :param height: of a grid cell
+    :return: the created grid cell
+    """
+    cells = GridCells()
+    cells.header.frame_id = name
+    cells.cell_width = width
+    cells.cell_height = height
+    cells.cells = grid_cells
+
+    return cells
+
+
+def makePoint(x,y,z=0):
+    point = Point()
+    point.x = x
+    point.y = y
+    point.z = z
+
+    return point

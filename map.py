@@ -34,8 +34,8 @@ class map():
         # logging.info("Begining to populate the colored map")
         for i in xrange(20):
             self._start_populate()
+
         # logging.info("Colored map populated 20x to ensure no ROS errors")
-        print "Exiting"
 
     def initMap(self):
         pass
@@ -48,13 +48,8 @@ class map():
         # logging.info("Configuring for publishing")
         grid = self._map
 
-        wall_cells = GridCells()
-        wall_cells.header.frame_id = 'map'
-        wall_cells.cell_width = 0.3; wall_cells.cell_height = 0.3
-
-        not_explored = GridCells()
-        not_explored.header.frame_id = 'map'
-        not_explored.cell_width = 0.3; not_explored.cell_height = 0.3
+        wall_cells = tools.makeGridCells('map',0.3,0.3)
+        not_explored = tools.makeGridCells('map',0.3,0.3)
 
         wall_list =[]; not_explored_list = []
 
@@ -64,11 +59,7 @@ class map():
             for j in range(1,self._width): #height should be set to hieght of grid
                 k=k+1
 
-                point=Point()
-                point.x=j*0.3
-                point.y=i*0.3
-                point.z=0
-
+                point = tools.makePoint(j*0.3,i*0.3,0)
                 if (grid[k] == 100):
                     wall_list.append(point)
                 else:
