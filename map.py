@@ -4,6 +4,7 @@ import rospy
 import math
 import tools
 import Queue
+import tf
 from nav_msgs.msg import GridCells
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Point
@@ -30,6 +31,8 @@ class map():
         self._explored_nodes = rospy.Publisher('/explored_nodes', GridCells, queue_size=1)
         self._not_explored_nodes = rospy.Publisher('/not_explored_nodes', GridCells, queue_size=1)
         self._path = rospy.Publisher('/path', GridCells, queue_size=1)
+
+        self._map_list = tf.TransformListener()
 
         # logging.info("Waiting for the _map to contain valid informaiton.")
 
@@ -128,6 +131,10 @@ class map():
         :param msg:
         :return:
         """
+        (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
+        self.current_x,self.current_y, self.current_z = p
+        self.current_theta = tools.normalizeTheta(q)
+
 
         self.goalX = int(math.floor(msg.pose.position.x/0.3)) -1
         self.goalY = int(math.floor(msg.pose.position.y/0.3))
@@ -142,7 +149,10 @@ class map():
         self._goal_ = (self.goalX, self.goalY, self.goaltheta)
         print self._goal_pos
 
-        self.getPath((2,2))
+
+        # print 'Getting current location:',self.current_x, math.floor(self.current_x), int(math.floor(self.current_x))
+        self.getPath((int((math.floor(self.current_x))),
+                     int(math.floor(self.current_y))))
 
     def getNeighbors(self,x,y,threshold=99):
         """
