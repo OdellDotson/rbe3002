@@ -151,8 +151,8 @@ class map():
 
 
         # print 'Getting current location:',self.current_x, math.floor(self.current_x), int(math.floor(self.current_x))
-        self.getPath((int((math.floor(self.current_x))),
-                     int(math.floor(self.current_y))))
+        self.getPath((int((math.floor(self.current_x/0.3)))-1,
+                     int(math.floor(self.current_y/0.3))))
 
     def getNeighbors(self,x,y,threshold=99):
         """
