@@ -88,7 +88,7 @@ class turtlebot(communicator):
         self.sleeper = rospy.Duration(1)
         rospy.sleep(self.sleeper)
         logger.info("Instantiation Complete.")
-        print "Complete"
+        print "Robot Created"
 
 
     """ Overridden or SubUsed functions """
@@ -258,9 +258,6 @@ class turtlebot(communicator):
             i = 0
             while not rospy.is_shutdown():
                 rospy.sleep(0.1)
-                i = i+1
-                if i > 50:
-                    return
                 continue
             """try:
                 self._odom_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(4.0))

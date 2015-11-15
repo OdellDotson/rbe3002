@@ -13,6 +13,8 @@ def distFormula(point1, point2):
     :param point2: Touple in the form of (x2, y2)
     :return: Returns Distance between two points
     """
+    # print "DistForm: ",point1, point2
+
     x1, y1 = point1
     x2, y2 = point2
 
@@ -57,8 +59,59 @@ def makeGridCells(name, width, height, grid_cells=[]):
 
 def makePoint(x,y,z=0):
     point = Point()
-    point.x = x
-    point.y = y
+    point.x = (x+(0.3)*7)*0.3
+    point.y = (y+(0.3)*1)*0.3
     point.z = z
 
     return point
+
+def publishListfromTouple(location_list):
+    ret_list = []
+    for i in location_list:
+        x,y = i
+        ret_list.append(makePoint(x,y,0))
+
+    return ret_list
+
+
+def dialateOccupancyMap(map):
+    """
+    This function dialates the high value points on a map by 1.
+
+    In other words, if given a map with walls of 100 and open space of 0, it will
+    go thorugh and make the walls 1 square bigger in all directions. This is to protect
+    the robot.
+    :param map:
+    :return:
+    """
+    def dialateNode(map,node,max_x,max_y):
+        x,y = node
+        gen_neighbors = [(x-1,y-1),
+                         (x+1,y+1),
+                         (x+1,y-1),
+                         (x-1,y+1),
+                         (x,y+1),
+                         (x,y-1),
+                         (x-1,y),
+                         (x+1,y)]
+        for n in gen_neighbors:
+            nx,ny = n
+            if nx > max_x or ny > max_y or nx < 0 or ny < 0:
+                continue
+            map[ny][nx] = 100
+        return map
+
+
+    taken_spaces = []
+    for y,row in enumerate(map):
+        for x,column in enumerate(row):
+            if map[y][x] == 100:
+                taken_spaces.append((x,y)) ## (x,y)
+    max_y = y
+    max_x = x
+    for space in taken_spaces:
+        map = dialateNode(map,space,max_x,max_y)
+
+    return map
+
+

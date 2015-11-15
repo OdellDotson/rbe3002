@@ -1,6 +1,7 @@
 __author__ = 'Odell Dotson'
 
 import rospy
+import math
 import tools
 import Queue
 from nav_msgs.msg import GridCells
@@ -14,8 +15,14 @@ from communicator import communicator
 
 class map():
     def __init__(self, name):
-        self._map = None ## initialized first to avoid hanging
+        self._startup = False ## initialized first to avoid hanging
         self._name_ = name
+
+        self.wall_list = []
+        self.explored_nodes_list = []
+        self.not_explored_nodes_list = []
+        self.path_list = []
+
 
         self._map_sub = rospy.Subscriber('/map', OccupancyGrid , self._updateMap)
 
@@ -26,7 +33,7 @@ class map():
 
         # logging.info("Waiting for the _map to contain valid informaiton.")
 
-        while self._map is None:
+        while self._startup is False:
             rospy.sleep(0.1)
             print "Map is none..."
             continue
@@ -34,38 +41,38 @@ class map():
         # logging.info("Begining to populate the colored map")
         for i in xrange(20):
             self._start_populate()
-
+        print "Map instantiated properly"
         # logging.info("Colored map populated 20x to ensure no ROS errors")
 
-    def initMap(self):
-        pass
-        #  Create a map, empty of objects, places the robot at 0,0 initially
 
-    def createPath(self):
-        pass
-        #  Get data from (somewhere?) and create a path (on top of the map/using the map) using A*
     def _start_populate(self, threshold =99):
+        """
+        This function publishes the walls and unexplored maps to the 'self._wall' and 'self._not_explored_nodes'
+        publishers. This gives the map a basis to view what is occuring in realtime.
+
+        This is used as a startup function, and as a base paint function.
+
+        :param threshold: This is the value that is used to discern a wall vs. unknown space
+        :return: None
+        """
+
         # logging.info("Configuring for publishing")
         grid = self._map
 
         wall_cells = tools.makeGridCells('map',0.3,0.3)
         not_explored = tools.makeGridCells('map',0.3,0.3)
 
-        wall_list =[]; not_explored_list = []
+        self.wall_list =[]; self.not_explored_list = []
 
-        k=0
-        for i in range(1,self._height): #height should be set to hieght of grid
-            k=k+1
-            for j in range(1,self._width): #height should be set to hieght of grid
-                k=k+1
-
-                point = tools.makePoint(j*0.3,i*0.3,0)
-                if (grid[k] == 100):
-                    wall_list.append(point)
+        for i in range(0,self._height): #height should be set to hieght of grid
+            for j in range(0,self._width): #height should be set to hieght of grid
+                point = tools.makePoint(j,i,0)
+                if (self._map[i][j] == 100):
+                    self.wall_list.append(point)
                 else:
-                    not_explored_list.append(point)
-        wall_cells.cells = wall_list
-        not_explored.cells = not_explored_list
+                    self.not_explored_list.append(point)
+        wall_cells.cells = self.wall_list
+        not_explored.cells = self.not_explored_list
 
         self._walls.publish(wall_cells)
         rospy.sleep(0.1)
@@ -73,34 +80,116 @@ class map():
         rospy.sleep(0.1)
 
     def _updateMap(self, msg):
-        self._map=msg.data
+        """
+        This is the callback for when the '/map' topic publishes changes.
+
+        The function is smart enough to know when it is the first vs. when the map is updated.
+
+        :param msg:
+        :return: None
+        """
+        self._map = []
+        for i in xrange(msg.info.height):
+            new_list = []
+            new_list.extend(msg.data[i*msg.info.width:(i+1)*msg.info.width])
+            self._map.append(new_list)
+        self._map = tools.dialateOccupancyMap(self._map)
+
         self._height=msg.info.height
         self._width=msg.info.width
-        self._pose=msg.info.origin # Do we actually need the pose? If not, remove
-        #print self._map
+        self._pose=msg.info.origin
+        if self._startup is True:
+            self._repaint_map(baseMap=True)
+        self._startup = True
+
+
+
+    def _repaint_map(self, baseMap=False, path=False):
+        """
+        This repaints the map based off the path from A* and the explored regions.
+
+        This is also run if the map is updated through 'self._updateMap(self, msg)'
+
+        :return:
+        """
+        if baseMap:
+            self._start_populate()
+            self._path.publish(tools.makeGridCells('/map',0.3,0.3,self.path_list))
+        if path:
+            self._path.publish(tools.makeGridCells('/map',0.3,0.3,self.path_list))
+        self._explored_nodes.publish(tools.makeGridCells('/map',0.3,0.3,self.explored_nodes_list))
+
+
 
     def storeGoal(self, msg):
-        self.x = msg.point.x
-        self.y = msg.point.y
-        self.theta=tools.normalizeTheta((msg.quaternion.x,msg.quaternion.y,msg.quaternion.z,msg.quaternion.w))
-        goal = (self.x, self.y)
-        goalTheta = (self.x, self.y, self.theta)
+        """
+        This is the callback that is attached in the parent class. This catches rVis's 2D Nav Pose buttons
 
-    def getNeightbors(self,x,y,threshold=99):#Only returns good neighbors
-        goodNeighbors = []
-        if(x>self._width or x < 0 or y>self._height or y < 0):
+        :param msg:
+        :return:
+        """
+
+        self.x = int(math.floor(msg.pose.position.x/0.3)) -1
+        self.y = int(math.floor(msg.pose.position.y/0.3))
+        print "The goal is: ", self.x, self.y, self._map[self.y][self.x]
+        rospy.sleep(1)
+
+        while (self._map[self.y][self.x] != 0):
+            self.x = self.x+1
+
+        self.theta=tools.normalizeTheta((msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w))
+        goal = (self.x, self.y)
+        """ Stores the goal for a* and the goal for xytheta"""
+        self._goal_pos = (self.x, self.y)
+        self._goal_ = (self.x, self.y, self.theta)
+        print self._goal_pos
+
+        self.getPath((2,2))
+
+    def getNeighbors(self,x,y,threshold=99):
+        """
+        This get's the neighbors of a specific point on the map. This function preemptively removes squares with
+        values greater than the threshold. This allows us to remove walls and dangerous zones from the path planning
+
+        :param x: x location of the point
+        :param y: y location of the point
+        :param threshold: threshold to decide if the value is travelable
+        :return: None
+        """
+
+        if(y>self._width or x < 0 or y>self._height or y < 0):
+            print (x,y)
             raise ReferenceError("getNeighbors out of bound error on x or y coordinate.")
         #Goes through the values, ignores self
-        for i in range (x-1, x+2):#Itterate though x locations
-            for j in range(y-1, y+2):#itterate through y locations
-                if (i is not x and j is not y) and not (x>self._width or x < 0 or y>self._height or y < 0):#If we're not looking at our current location and we're not looking out of range
-                    if(self._data[i][j] < threshold):#If the neighbor is a valid place to go to
-                        goodNeighbors.append((i,j))
+        gen_neighbors = [(x-1,y-1),
+                         (x+1,y+1),
+                         (x+1,y-1),
+                         (x-1,y+1),
+                         (x,y+1),
+                         (x,y-1),
+                         (x-1,y),
+                         (x+1,y)]
+        goodNeighbors = []
+        for move in gen_neighbors:
+            tx, ty = move
+            if ((tx == x) and (ty==y)) or (tx > self._width or x < 0 or y > self._height or y < 0):
+                continue
+            if(self._map[ty][tx] < threshold):
+                goodNeighbors.append(move)
         return goodNeighbors #State farm joke goes here
 
     def aStarSearch(self, start):
-        frontier = Queue.PriorityQueue
-        frontier.put(0, start)
+        """
+        This function generates a dictionary of paths where the shortest path can be found through
+        traversing from the goal back to the start.
+
+        This version of A* uses tools.distFormula as the heuristic. Could be changed out.
+
+        :param start: (x,y) touple of the location in the grid.
+        :return: Dictionary of <end point> : <starting Point> as key,value
+        """
+        frontier = Queue.PriorityQueue()
+        frontier.put((0, start))            ## Put takes a touple of priority, value
 
         came_from = {}
         cost_so_far = {}
@@ -109,29 +198,59 @@ class map():
         cost_so_far[start] = 0
 
         while not frontier.empty():
-            current = frontier.get()
+            current_touple = frontier.get()                                             ## Returns the (priority, (x,y)
+            _,current = current_touple                                                  ## sets current to (x,y)
+            x,y = current
 
-            if current == goal:
+            if x == self.x and y == self.y:
                 break #We're there!
 
-            x,y = current
-            for next in self.getNeighbors(x,y):
-                cost_next = cost_so_far[current] + tools.distFormula(next, current)
+            #unpack current
+            neighbors = self.getNeighbors(x,y)
+            # print neighbors
+            for next in neighbors:                                         ## Get list of touples (points)
+                # print "AStar",next,current
+                cost_next = cost_so_far[current] + tools.distFormula(current, next)
                 if next not in cost_so_far or cost_so_far[next] > cost_next:
                     cost_so_far[next] = cost_next
-                    frontier.put(cost_next + tools.distFormula(next, goal), next)
+                    frontier.put((cost_next + tools.distFormula(next, self._goal_pos), next))## Put takes a touple of priority, value
                     came_from[next] = current
+                    nx,ny = next
+                    self.explored_nodes_list.append(tools.makePoint(nx,ny,0))
+                    self._repaint_map()
+
+
+
+        if frontier.empty():
+            print "It's empty!!!!!"
+            rospy.sleep(1)
+        print came_from.keys()
         return came_from
 
     def getPath(self, start):
-        came_from = aStarSearch(start)#A*, create path of nodes, returns the came_from dictionary
-        path = []
-        prev = came_from[goal]
+        """
+        This function uses A* to generate a from start to end and then returns it.
+        :param start:
+        :return: list of points (x,y touples) that is the path to take to the goal
+        """
+        came_from = self.aStarSearch(start)
+        path = [self._goal_pos]
+        current_location = self._goal_pos
+        prev = came_from[current_location]
         path.append(prev)
-        while current is not start:
-            current = came_from[prev]
-            path.append(current)
-        return path.reverse()
+        current_location = prev
+        while prev is not None:
+            prev = came_from[current_location]
+            if prev is None:
+                continue
+            path.append(prev)
+            current_location = prev
+
+        path.reverse()
+
+        self.path_list = tools.publishListfromTouple(path)
+        self._repaint_map(path=True)
+        return path
 
 
     def main(self):
