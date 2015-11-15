@@ -59,6 +59,11 @@ def makeGridCells(name, width, height, grid_cells=[]):
 
 def makePoint(x,y,z=0):
     point = Point()
+    """
+    The Point.n values should usually be <Location>*<Size> however in this case
+    it is <Location + offsett>*<Size>. This is why the function is so strange. Used
+    Guess and check for the offset.
+    """
     point.x = (x+(0.3)*7)*0.3
     point.y = (y+(0.3)*1)*0.3
     point.z = z
@@ -66,6 +71,12 @@ def makePoint(x,y,z=0):
     return point
 
 def publishListfromTouple(location_list):
+    """
+    This creates a list of points from a list of tuples
+
+    :param location_list: List of tuples
+    :return: list of points
+    """
     ret_list = []
     for i in location_list:
         x,y = i
@@ -85,8 +96,17 @@ def dialateOccupancyMap(map):
     :return:
     """
     def dialateNode(map,node,max_x,max_y):
+        """
+        This dialates one node on a map and returns the map.
+
+        :param map: A list of lists of intigers with min 0 and max 100
+        :param node: x,y tuple of the location
+        :param max_x: width of the map
+        :param max_y: height of the map
+        :return:
+        """
         x,y = node
-        gen_neighbors = [(x-1,y-1),
+        gen_neighbors = [(x-1,y-1),             ## All possible neighbors
                          (x+1,y+1),
                          (x+1,y-1),
                          (x-1,y+1),
@@ -94,6 +114,7 @@ def dialateOccupancyMap(map):
                          (x,y-1),
                          (x-1,y),
                          (x+1,y)]
+
         for n in gen_neighbors:
             nx,ny = n
             if nx > max_x or ny > max_y or nx < 0 or ny < 0:
@@ -101,7 +122,7 @@ def dialateOccupancyMap(map):
             map[ny][nx] = 100
         return map
 
-
+    ## Get all the spaces with 100 as their value and put them in a list.
     taken_spaces = []
     for y,row in enumerate(map):
         for x,column in enumerate(row):
@@ -109,6 +130,7 @@ def dialateOccupancyMap(map):
                 taken_spaces.append((x,y)) ## (x,y)
     max_y = y
     max_x = x
+    ## Dialate all the spaces in the list.
     for space in taken_spaces:
         map = dialateNode(map,space,max_x,max_y)
 

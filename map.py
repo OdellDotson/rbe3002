@@ -129,19 +129,17 @@ class map():
         :return:
         """
 
-        self.x = int(math.floor(msg.pose.position.x/0.3)) -1
-        self.y = int(math.floor(msg.pose.position.y/0.3))
-        print "The goal is: ", self.x, self.y, self._map[self.y][self.x]
-        rospy.sleep(1)
+        self.goalX = int(math.floor(msg.pose.position.x/0.3)) -1
+        self.goalY = int(math.floor(msg.pose.position.y/0.3))
 
-        while (self._map[self.y][self.x] != 0):
-            self.x = self.x+1
+        while (self._map[self.goalY][self.goalX] != 0):
+            self.goalX = self.goalX+1
 
-        self.theta=tools.normalizeTheta((msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w))
-        goal = (self.x, self.y)
+        self.goaltheta=tools.normalizeTheta((msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w))
+        goal = (self.goalX, self.goalY)
         """ Stores the goal for a* and the goal for xytheta"""
-        self._goal_pos = (self.x, self.y)
-        self._goal_ = (self.x, self.y, self.theta)
+        self._goal_pos = (self.goalX, self.goalY)
+        self._goal_ = (self.goalX, self.goalY, self.goaltheta)
         print self._goal_pos
 
         self.getPath((2,2))
@@ -202,7 +200,7 @@ class map():
             _,current = current_touple                                                  ## sets current to (x,y)
             x,y = current
 
-            if x == self.x and y == self.y:
+            if x == self.goalX and y == self.goalY:
                 break #We're there!
 
             #unpack current
@@ -233,12 +231,16 @@ class map():
         :param start:
         :return: list of points (x,y touples) that is the path to take to the goal
         """
-        came_from = self.aStarSearch(start)
-        path = [self._goal_pos]
+        came_from = self.aStarSearch(start)          ## Get dictionary from astar
+        path = [self._goal_pos]                      ## Initialize path
+
+        ## Prime the statements for iterating to the end of the path
         current_location = self._goal_pos
         prev = came_from[current_location]
         path.append(prev)
         current_location = prev
+
+        ## Traverse the tree from leaves to trunk
         while prev is not None:
             prev = came_from[current_location]
             if prev is None:
@@ -246,10 +248,12 @@ class map():
             path.append(prev)
             current_location = prev
 
-        path.reverse()
+        path.reverse()                              ## Reverse the list so it goes from start to finish
 
+        ## Convert the path list to a publishable list so we can view the path in rViz
         self.path_list = tools.publishListfromTouple(path)
-        self._repaint_map(path=True)
+        self._repaint_map(path=True)                ## Repaint the map so we can see it.
+
         return path
 
 
