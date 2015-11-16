@@ -151,7 +151,7 @@ class map():
 
 
         # print 'Getting current location:',self.current_x, math.floor(self.current_x), int(math.floor(self.current_x))
-        self.getPath((int((math.floor(self.current_x/0.3)))-1,
+        self.getWaypoint((int((math.floor(self.current_x/0.3)))-1,
                      int(math.floor(self.current_y/0.3))))
 
     def getNeighbors(self,x,y,threshold=99):
@@ -234,6 +234,29 @@ class map():
             rospy.sleep(1)
         print came_from.keys()
         return came_from
+
+
+    def getWaypoint(self, start):
+        pathToNodify = self.getPath(start) # Get path from A*
+        nodePath = []  # What will become the path of only relevant nodes.
+        prevSlope = 1337.0  # Create an impossible to match previous slope
+
+        for node in range (0, len(pathToNodify)-1): # For every node in the path created by A*:
+            if pathToNodify[node] != self._goal_pos: # Do not try to calculate a slope for the last node
+                #calculate current slope, from current position to next position.
+                deltax = 1.0*(pathToNodify[node][0]-pathToNodify[node+1][0])#Calcualte delta x based on node and the node ahead
+                deltay = 1.0*(pathToNodify[node][1]-pathToNodify[node+1][1])#calculate delta y
+                currentSlope = deltax/(deltay+0.000001) #So that we don't have devide by 0 errors. Dunno how else to fix
+                if currentSlope != prevSlope: # If we see a slope change
+                    nodePath.append(pathToNodify[node])# Add the new node
+                    prevSlope=currentSlope # Update th slope
+
+        #Append the very last node, so that we have a complete path.
+        nodePath.append(pathToNodify[len(pathToNodify)-1])
+
+        print nodePath
+        return nodePath
+
 
     def getPath(self, start):
         """
