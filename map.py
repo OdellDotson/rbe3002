@@ -229,13 +229,13 @@ class map():
                 # print "AStar",next,current
                 cost_next = cost_so_far[current] + tools.distFormula(current, next)
                 if next not in cost_so_far or cost_so_far[next] > cost_next:
+                    if next not in cost_so_far
+                        frontier.put((cost_next + tools.distFormula(next, self._goal_pos), next))## Put takes a touple of priority, value
+                        nx,ny = next
+                        self.explored_nodes_list.append(tools.makePoint(nx,ny,0))
+                        self._repaint_map()
                     cost_so_far[next] = cost_next
-                    frontier.put((cost_next + tools.distFormula(next, self._goal_pos), next))## Put takes a touple of priority, value
                     came_from[next] = current
-                    nx,ny = next
-                    self.explored_nodes_list.append(tools.makePoint(nx,ny,0))
-                    self._repaint_map()
-
 
 
         if frontier.empty():
