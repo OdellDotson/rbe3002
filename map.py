@@ -133,9 +133,9 @@ class map():
         Returns true if we're there, false otherwise.
         """
         if (tools.distFormula(currentLoc, self._goal_pos) < 0.1): # Maybe this error bar should go out globally, or take it in.
-            return true
+            return True
         else:
-            return false
+            return False
 
 
     def isAtGoalAngle(self, currentAngle):
@@ -143,9 +143,9 @@ class map():
         Takes in the robot's current angle in radians, tests if that angle is the goal angle.
         """
         if abs(currentAngle - self._goal_[2]) < 0.26: #Like 14 and a half degrees
-            return true
+            return True
         else:
-            return false
+            return False
 
 
     def getGoalAngle(self):
@@ -262,7 +262,7 @@ class map():
                 # print "AStar",next,current
                 cost_next = cost_so_far[current] + tools.distFormula(current, next)
                 if next not in cost_so_far or cost_so_far[next] > cost_next:
-                    if next not in cost_so_far
+                    if next not in cost_so_far:
                         frontier.put((cost_next + tools.distFormula(next, self._goal_pos), next))## Put takes a touple of priority, value
                         nx,ny = next
                         self.explored_nodes_list.append(tools.makePoint(nx,ny,0))
