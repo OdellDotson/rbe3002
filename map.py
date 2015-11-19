@@ -84,6 +84,7 @@ class map():
         self._not_explored_nodes.publish(not_explored)
         rospy.sleep(0.1)
 
+
     def _updateMap(self, msg):
         """
         This is the callback for when the '/map' topic publishes changes.
@@ -108,7 +109,6 @@ class map():
         self._startup = True
 
 
-
     def _repaint_map(self, baseMap=False, path=False):
         """
         This repaints the map based off the path from A* and the explored regions.
@@ -127,6 +127,37 @@ class map():
             self._waypoints.publish(tools.makeGridCells('/map',0.3,0.3,self.waypoint_list))
 
 
+    def isAtGoalPosition(self, currentLoc):
+        """
+        Takes in a tuple of (x, y) that is the current robot location.
+        Returns true if we're there, false otherwise.
+        """
+        if (tools.distFormula(currentLoc, self._goal_pos) < 0.1): # Maybe this error bar should go out globally, or take it in.
+            return true
+        else:
+            return false
+
+
+    def isAtGoalAngle(self, currentAngle):
+        """
+        Takes in the robot's current angle in radians, tests if that angle is the goal angle.
+        """
+        if abs(currentAngle - self._goal_[2]) < 0.26: #Like 14 and a half degrees
+            return true
+        else:
+            return false
+
+
+    def getGoalAngle(self):
+        """
+        Returns the goal angle of the robot for the turtlebot to keep track of.
+        """
+        return self._goal_[2]
+
+
+    def getNextWaypoint(self, start):
+        nodePath = self.getWaypoint((int((math.floor(self.current_x/0.3)))-1, int(math.floor(self.current_y/0.3))))
+        return nodePath[0]
 
     def storeGoal(self, msg):
         """
@@ -163,6 +194,7 @@ class map():
         self.getWaypoint((int((math.floor(self.current_x/0.3)))-1,
                      int(math.floor(self.current_y/0.3))))
 
+
     def getNeighbors(self,x,y,threshold=99):
         """
         This get's the neighbors of a specific point on the map. This function preemptively removes squares with
@@ -194,6 +226,7 @@ class map():
             if(self._map[ty][tx] < threshold):
                 goodNeighbors.append(move)
         return goodNeighbors #State farm joke goes here
+
 
     def aStarSearch(self, start):
         """
