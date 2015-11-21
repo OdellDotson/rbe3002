@@ -38,6 +38,8 @@ class map():
         self._path = rospy.Publisher('/path', GridCells, queue_size=1)
 
         self._map_list = tf.TransformListener()
+        self._map_tf = tf.TransformBroadcaster()
+
 
         # logging.info("Waiting for the _map to contain valid informaiton.")
 
@@ -129,6 +131,12 @@ class map():
             self._explored_nodes.publish(tools.makeGridCells('/map',0.3,0.3,self.explored_nodes_list))
             self._waypoints.publish(tools.makeGridCells('/map',0.3,0.3,self.waypoint_list))
 
+    def broadcastLocation(self,msg):
+        self.map_tf.sendTransform((msg.pose.pose.position.x, msg.pose.pose.position.y, 0),
+                                  (msg.pose.pose.orientation.x,msg.pose.pose.orientation.y,msg.pose.pose.orientation.z,data.pose.pose.orientation.w),
+                                  rospy.Time.now(),
+                                  "Base_Footprint",
+                                  'Map')
 
     def isAtGoalPosition(self, currentLoc):
         """
@@ -167,9 +175,23 @@ class map():
         if self.current_x is None:
             raise RuntimeError("Current is None")
 
-    def getNextWaypoint(self, start):
-        nodePath = self.getWaypoint((int((math.floor(self.current_x/0.3)))-1, int(math.floor(self.current_y/0.3))))
-        return nodePath[0]
+    def getNextWaypoint(self):
+        """
+        This will return the second waypoint in the list becasue the first waypoint is where the robot is.
+        This way, when this function is run, it will recalculate the path and NOT confuse the robot by telling
+        it to drive to where it is.
+
+        :return:
+        """
+        print "Your location is: ", self.current_x,self.current_y
+        print "Your goal is",self._goal_
+        
+        nodePath = []
+        nodePath = self.getWaypoint()
+        if len(nodePath)>=2:
+            return nodePath[1]
+        else:
+            return []
 
     def storeGoal(self, goalX, goalY, goaltheta):
         """
