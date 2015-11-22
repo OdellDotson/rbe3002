@@ -156,7 +156,8 @@ class map():
 
 
     def getNextWaypoint(self, start):
-        nodePath = self.getWaypoint((int((math.floor(self.current_x/0.3)))-1, int(math.floor(self.current_y/0.3))))
+        nodePath = self.getWaypoint((tools.mapifyValue(self.current_x)-1,
+                                     tools.mapifyValue(self.current_y)))
         return nodePath[0]
 
     def storeGoal(self, msg):
@@ -176,8 +177,8 @@ class map():
         self.current_theta = tools.normalizeTheta(q)
 
 
-        self.goalX = int(math.floor(msg.pose.position.x/0.3)) -1
-        self.goalY = int(math.floor(msg.pose.position.y/0.3))
+        self.goalX = tools.mapifyValue(msg.pose.position.x) -1
+        self.goalY = tools.mapifyValue(msg.pose.position.y)
 
         while (self._map[self.goalY][self.goalX] != 0):
             self.goalX = self.goalX+1
@@ -191,8 +192,8 @@ class map():
 
 
         # print 'Getting current location:',self.current_x, math.floor(self.current_x), int(math.floor(self.current_x))
-        self.getWaypoint((int((math.floor(self.current_x/0.3)))-1,
-                     int(math.floor(self.current_y/0.3))))
+        self.getWaypoint((tools.mapifyValue(self.current_x)-1,
+                          tools.mapifyValue(self.current_y)))
 
 
     def getNeighbors(self,x,y,threshold=99):

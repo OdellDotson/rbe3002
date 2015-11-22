@@ -6,6 +6,10 @@ import tf
 from nav_msgs.msg import GridCells
 from geometry_msgs.msg import Point
 
+cellW = 0.3
+cellH = 0.3
+## Created because the cell width and height are the same
+cell = 0.3
 
 def distFormula(point1, point2):
     """
@@ -135,5 +139,12 @@ def dialateOccupancyMap(map):
         map = dialateNode(map,space,max_x,max_y)
 
     return map
+
+def mapifyValue(value):
+    return int(round(value/cell))
+
+
+def demapifyValue(value):
+    return value*cell
 
 
