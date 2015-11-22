@@ -25,9 +25,6 @@ class map():
         self.path_list = []
         self.waypoint_list = []
 
-        self.current_x, self.current_y, self.current_theta = None, None, None
-        self.goalX, self.goalY, self.goaltheta = None, None, None
-
 
         self._map_sub = rospy.Subscriber('/map', OccupancyGrid , self._updateMap)
 
@@ -157,38 +154,45 @@ class map():
         """
         return self._goal_[2]
 
-    def _updateLocation(self):
-        while self.current_x is None or self.current_y is None or self.current_theta is None:
-            (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
-            self.current_x,self.current_y, self.current_z = p
-            self.current_theta = tools.normalizeTheta(q)
-            rospy.sleep(0.1)
-
-        if self.current_x is None:
-            raise RuntimeError("Current is None")
 
     def getNextWaypoint(self, start):
         nodePath = self.getWaypoint((int((math.floor(self.current_x/0.3)))-1, int(math.floor(self.current_y/0.3))))
         return nodePath[0]
 
-    def storeGoal(self, goalX, goalY, goaltheta):
+    def storeGoal(self, msg):
         """
         This is the callback that is attached in the parent class. This catches rVis's 2D Nav Pose buttons
 
         :param msg:
         :return:
         """
-        self.goalX, self.goalY, self.goaltheta = goalX, goalY, goaltheta
-
         self.explored_nodes_list = []
         self.waypoint_list = []
         self.path_list = []
 
-        goal = (goalX, goalY)
+
+        (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
+        self.current_x,self.current_y, self.current_z = p
+        self.current_theta = tools.normalizeTheta(q)
+
+
+        self.goalX = int(math.floor(msg.pose.position.x/0.3)) -1
+        self.goalY = int(math.floor(msg.pose.position.y/0.3))
+
+        while (self._map[self.goalY][self.goalX] != 0):
+            self.goalX = self.goalX+1
+
+        self.goaltheta=tools.normalizeTheta((msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w))
+        goal = (self.goalX, self.goalY)
         """ Stores the goal for a* and the goal for xytheta"""
-        self._goal_pos = (goalX, goalY)
-        self._goal_ = (goalX, goalY, goaltheta)
-        print "Your goal is: ", self._goal_pos
+        self._goal_pos = (self.goalX, self.goalY)
+        self._goal_ = (self.goalX, self.goalY, self.goaltheta)
+        print self._goal_pos
+
+
+        # print 'Getting current location:',self.current_x, math.floor(self.current_x), int(math.floor(self.current_x))
+        self.getWaypoint((int((math.floor(self.current_x/0.3)))-1,
+                     int(math.floor(self.current_y/0.3))))
 
 
     def getNeighbors(self,x,y,threshold=99):
@@ -273,12 +277,7 @@ class map():
         return came_from
 
 
-    def getWaypoint(self):
-
-        self._updateLocation()
-        ## Set start here to allow this to be run multiple times and still be accurate.
-        start = (int((math.floor(self.current_x/0.3)))-1,int(math.floor(self.current_y/0.3)))
-
+    def getWaypoint(self, start):
         pathToNodify = self.getPath(start) # Get path from A*
         nodePath = []  # What will become the path of only relevant nodes.
         prevSlope = 1337.0  # Create an impossible to match previous slope
