@@ -140,6 +140,26 @@ def dialateOccupancyMap(map):
 
     return map
 
+def lMaptoLLMap(lMap, height, width):
+    """
+    Converts a List Map to a List of Lists map.
+
+    In ROS, many maps are of the form [ROW1,ROS2,ROW3...ROSn]. This simplifies them
+    to [[ROW1],[ROW2],...[ROWn]]. This allows you to index them as: point = map[y][x] to get
+    the value at a specific map.
+
+    :param lMap:
+    :param height:
+    :param width:
+    :return:
+    """
+    map = []
+    for i in xrange(height):
+        new_list = []
+        new_list.extend(lMap[i*width:(i+1)*width])
+        map.append(new_list)
+    return map
+
 def mapifyValue(value):
     return int(round(value/cell))
 

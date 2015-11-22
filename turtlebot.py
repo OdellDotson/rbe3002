@@ -15,12 +15,13 @@ import math
 # Subclass Information
 from communicator import communicator
 from map import map
+from localMap import localMap
 
 import logging
 
 #Message Types
 from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry, GridCells
+from nav_msgs.msg import Odometry, GridCells, OccupancyGrid
 from geometry_msgs.msg import PoseStamped
 
 class turtlebot(communicator):
@@ -53,6 +54,7 @@ class turtlebot(communicator):
         logger.info("Node created with name: "+name)
         logger.info("Creating Map Next")
         self.map = map(name+"Map")
+        self.local = localMap(name+'Local Map')
         self._name_ = name
         logger.info("Map Created")
 
@@ -67,6 +69,7 @@ class turtlebot(communicator):
 
         self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
         self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
+        self._local_cost = rospy.Subscriber('/move_base/local_costmap/costmap',OccupancyGrid,self.storeCostmap, queue_size=1)
         # self._map_sub = rospy.Subscriber('/map',PoseStamped,self.mapCallback, queue_size=3)
         # self._bmp_sub = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, turtlebot.setBumper, queue_size=3)
 
@@ -99,8 +102,13 @@ class turtlebot(communicator):
         self._goal_,self._current_ = self.map.storeGoal(goalX,goalY,goaltheta)
 
         path = self.map.getNextWaypoint()
-        print path
-        self.driveTo(path)
+        # print path
+
+
+
+    def storeCostmap(self, msg):
+        self.local.storeCostmap(msg)
+
 
 
 
@@ -273,21 +281,6 @@ class turtlebot(communicator):
         print "I did it!"
         return
 
-    """
-+    def driveTo(self, start, end):
-+        cx,cy,ct = start
-+        gx,gy,gt = end
-+        print "Start: ",start, "End: ",end
-+
-+        newPose = PoseStamped()
-+
-+        dx = ((gx*0.3)-cx); dy = ((gy*0.3)-cy)
-+        turn_theta = math.degrees(math.atan2(dy,dx))
-+        print "DX", dx, "Turn Theta", turn_theta
-+
-+        self.rotate((turn_theta-math.degrees(ct)))
-+        self.driveStraight(0.1,math.sqrt((dx)**2 + (dy)**2))
-    """
 
 
 

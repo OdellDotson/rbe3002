@@ -15,14 +15,6 @@ from geometry_msgs.msg import Point
 from communicator import communicator
 
 
-"""
-
-@TODO: Line 198 should be replaced with a 'is legal' function, and that function should be called in the turtlebot
-        class when the goal is set.
-
-
-
-"""
 
 class map():
     def __init__(self, name):
@@ -109,12 +101,9 @@ class map():
         :param msg:
         :return: None
         """
-        self._map = []
-        for i in xrange(msg.info.height):
-            new_list = []
-            new_list.extend(msg.data[i*msg.info.width:(i+1)*msg.info.width])
-            self._map.append(new_list)
-        self._map = tools.dialateOccupancyMap(self._map)
+        self._map = tools.lMaptoLLMap(msg.data,
+                                      msg.info.height,
+                                      msg.info.width)
 
         self._height=msg.info.height
         self._width=msg.info.width
