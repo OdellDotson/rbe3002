@@ -174,22 +174,26 @@ class map():
         self.current_x,self.current_y, self.current_z = p
         self.current_theta = tools.normalizeTheta(q)
 
-        self.current_x = tools.mapifyValue(self.current_x)
+        self.current_x = tools.mapifyValue(self.current_x) - 1
         self.current_y = tools.mapifyValue(self.current_y)
 
         print "Robot is located at: ", self.current_x,self.current_y,self.current_theta
 
-    def getNextWaypoint(self, start):
-        nodePath = self.getWaypoint((self.current_x-1,
-                                     self.current_y))
-        return nodePath[0]
+    def getNextWaypoint(self):
+        nodePath = self.getWaypoint()
+        if len(nodePath) >= 2:return nodePath[1]
+        else:return []
+
 
     def storeGoal(self, goalX, goalY, goalTheta):
         """
-        This is the callback that is attached in the parent class. This catches rVis's 2D Nav Pose buttons
+        THis stores the goal and get's the current location of the robot in the map.
 
-        :param msg:
-        :return:
+        :param goalX: x location of the goal in the grid frame
+        :param goalY: y location of the goal in the grid frame
+        :param goalTheta: angle of the goal in the grid frame (no difference)
+        :return: self._goal_, self._current_ which is an : x,y,theta location of the goal and an x,y location of the
+            robot.
         """
         print "Getting ready to store your goal"
         self.explored_nodes_list = []
@@ -214,8 +218,6 @@ class map():
         self._goal_pos = (self.goalX, self.goalY)
         self._goal_ = (self.goalX, self.goalY, self.goaltheta)
 
-        self.getWaypoint((self.current_x-1,
-                          self.current_y))
 
         return self._goal_, (self.current_x,self.current_y,self.current_theta)
         #
@@ -305,7 +307,10 @@ class map():
         return came_from
 
 
-    def getWaypoint(self, start):
+    def getWaypoint(self):
+        self._updateLocation()
+        start = (self.current_x,self.current_y)
+
         pathToNodify = self.getPath(start) # Get path from A*
         nodePath = []  # What will become the path of only relevant nodes.
         prevSlope = 1337.0  # Create an impossible to match previous slope

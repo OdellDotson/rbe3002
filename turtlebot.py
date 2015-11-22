@@ -62,6 +62,7 @@ class turtlebot(communicator):
         logger.info("Creating Publishers and Subscribers")
         ## Pub/Sub information
         self._vel_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size=1)
+        # self._mov_pub = rospy.Publisher('/move_base/goal',PoseStamped,queue_size=1)
 
 
         self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
@@ -97,6 +98,9 @@ class turtlebot(communicator):
 
         self._goal_,self._current_ = self.map.storeGoal(goalX,goalY,goaltheta)
 
+        path = self.map.getNextWaypoint()
+        print path
+        self.driveTo(path)
 
 
 
@@ -192,10 +196,8 @@ class turtlebot(communicator):
 
             ## Modulate speed based off how far you've gone
             if dist_so_far <= abs(distance)*0.25:
-                print 'there'
                 regulated_speed = speed*(0.2) + speed*(dist_so_far / distance)
             elif dist_so_far >= abs(distance)*0.75:
-                print 'Here'
                 regulated_speed = speed*(0.2) + speed*(1- (dist_so_far / distance))
             else:
                 regulated_speed = speed
@@ -241,7 +243,7 @@ class turtlebot(communicator):
 
             print angle_to_travel_rad, start_theta_rad, current_theta_rad, d_theta, debug_state
             ## If you're within 0.1 Radian stop
-            if abs(angle_to_travel_rad) - abs(d_theta) < 0.1:
+            if abs(angle_to_travel_rad) - abs(d_theta) < 0.05:
                 done = True
                 self._stopRobot()
             else:
@@ -251,9 +253,41 @@ class turtlebot(communicator):
                     self._spinWheels(-speed,speed,.1)
 
 
+    def driveTo(self, point):
+        ## http://wiki.ros.org/move_base
+        ## http://wiki.ros.org/base_local_planner
+        cx,cy,ctheta = self._current_
+        gx,gy,gtheta = self._goal_
+
+        dx = tools.demapifyValue(gx - cx)
+        dy = tools.demapifyValue(gy - cy)
+        turn_theta = math.degrees(math.atan2(dy,dx))
+
+        print "Rotating "+str((turn_theta - math.degrees(ctheta)))+" degrees"
+        self.rotate((turn_theta - math.degrees(ctheta)))
+        print "Driving "+str(math.sqrt((dx)**2 + (dy)**2))+" meters"
+        self.driveStraight(0.1,math.sqrt((dx)**2 + (dy)**2))
 
 
 
+        print "I did it!"
+        return
+
+    """
++    def driveTo(self, start, end):
++        cx,cy,ct = start
++        gx,gy,gt = end
++        print "Start: ",start, "End: ",end
++
++        newPose = PoseStamped()
++
++        dx = ((gx*0.3)-cx); dy = ((gy*0.3)-cy)
++        turn_theta = math.degrees(math.atan2(dy,dx))
++        print "DX", dx, "Turn Theta", turn_theta
++
++        self.rotate((turn_theta-math.degrees(ct)))
++        self.driveStraight(0.1,math.sqrt((dx)**2 + (dy)**2))
+    """
 
 
 
