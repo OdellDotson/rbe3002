@@ -62,11 +62,12 @@ class turtlebot(communicator):
         logger.info("Creating Publishers and Subscribers")
         ## Pub/Sub information
         self._vel_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size=1)
-
+        self._pose_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped,queue_size=1)
 
         self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
-        self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.map.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
-        # self._map_sub = rospy.Subscriber('/map',PoseStamped,self.mapCallback, queue_size=3)
+
+        self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.storeGoal, queue_size=1) # check out the self.map.storeGoal thi
+        self._map_sub = rospy.Subscriber('/map',PoseStamped, PoseStamped, self.map.broadcastLocation, queue_size=3)
         # self._bmp_sub = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, turtlebot.setBumper, queue_size=3)
 
 
@@ -89,6 +90,22 @@ class turtlebot(communicator):
         rospy.sleep(self.sleeper)
         logger.info("Instantiation Complete.")
         print "Robot Created"
+
+
+    def storeGoal(self, msg):
+        print msg
+        self.grid_goalX = int(math.floor(msg.pose.position.x/0.3)) -1
+        self.grid_goalY = int(math.floor(msg.pose.position.y/0.3))
+        self.grid_goaltheta=tools.normalizeTheta((msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w))
+
+        self.map.storeGoal(self.grid_goalX, self.grid_goalY, self.grid_goaltheta)
+        path = self.map.getNextWaypoint()
+        while path is not []:
+            print path
+            gx,gy = path
+            self.driveTo((self.map.current_x,self.map.current_y, self.map.current_theta),
+                         (gx,gy,None))
+            path = self.map.getNextWaypoint()
 
 
     """ Overridden or SubUsed functions """
@@ -177,25 +194,26 @@ class turtlebot(communicator):
         arrived = False
         slowdown = False
 
+        print "Driving Straight "+str(distance)+" meters"
         while ((not arrived) and (not rospy.is_shutdown())):
             ## Get the distance traveled
             dist_so_far = tools.distFormula((starting_x,starting_y),(self._x,self._y))
 
             ## Modulate speed based off how far you've gone
-            if dist_so_far <= abs(distance)*0.25:
-                print 'there'
-                regulated_speed = speed*(0.2) + speed*(dist_so_far / distance)
-            elif dist_so_far >= abs(distance)*0.75:
-                print 'Here'
-                regulated_speed = speed*(0.2) + speed*(1- (dist_so_far / distance))
-            else:
-                regulated_speed = speed
+            # if dist_so_far <= abs(distance)*0.25:
+            #     regulated_speed = speed*(0.2) + speed*(dist_so_far / distance)
+            # elif dist_so_far >= abs(distance)*0.75:
+            #     regulated_speed = speed*(0.2) + speed*(1- (dist_so_far / distance))
+            # else:
+
+            regulated_speed = speed
             if distance > 0: self._spinWheels(regulated_speed,regulated_speed,0.1)
             else: self._spinWheels(-regulated_speed,-regulated_speed,0.1)
-
             #Set the booleans on if you're there yet
             arrived = dist_so_far >= abs(distance)
+            print arrived, dist_so_far, distance
 
+        print "Finished Driving"
         self._stopRobot()
 
 
@@ -211,9 +229,8 @@ class turtlebot(communicator):
 
         angle_to_travel_rad = math.radians(angle)
         start_theta_rad = tools.normalizeTheta(self._quat)
-        print angle_to_travel_rad, start_theta_rad
-        print ("angle to travel", "start theta", "Current theta", "d_theta")
 
+        print "Turning "+str(angle)+" degrees"
         while not done and (not rospy.is_shutdown()):
             current_theta_rad = tools.normalizeTheta(self._quat)
 
@@ -230,16 +247,30 @@ class turtlebot(communicator):
                 d_theta = start_theta_rad - current_theta_rad
                 debug_state = 3
 
-            print angle_to_travel_rad, start_theta_rad, current_theta_rad, d_theta, debug_state
             ## If you're within 0.1 Radian stop
-            if abs(angle_to_travel_rad) - abs(d_theta) < 0.1:
+            if math.degrees(abs(angle_to_travel_rad) - abs(d_theta)) < 5:
                 done = True
+                print "Finished Turning"
                 self._stopRobot()
             else:
                 if (angle > 0):
                     self._spinWheels(speed,-speed,.1)
                 else:
                     self._spinWheels(-speed,speed,.1)
+
+    def driveTo(self, start, end):
+        cx,cy,ct = start
+        gx,gy,gt = end
+        print "Start: ",start, "End: ",end
+
+        newPose = PoseStamped()
+
+        dx = ((gx*0.3)-cx); dy = ((gy*0.3)-cy)
+        turn_theta = math.degrees(math.atan2(dy,dx))
+        print "DX", dx, "Turn Theta", turn_theta
+
+        self.rotate((turn_theta-math.degrees(ct)))
+        self.driveStraight(0.1,math.sqrt((dx)**2 + (dy)**2))
 
 
 
@@ -255,7 +286,8 @@ class turtlebot(communicator):
 
     def main(self):
         try:
-            i = 0
+            # self.rotate(90)
+            # self.driveStraight(0.5,0.5)
             while not rospy.is_shutdown():
                 rospy.sleep(0.1)
                 continue

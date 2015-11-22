@@ -249,7 +249,7 @@ Visualization Manager:
         {}
       Update Interval: 0
       Value: false
-    - Alpha: 0
+    - Alpha: 0.1
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
