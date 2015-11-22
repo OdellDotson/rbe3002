@@ -65,7 +65,7 @@ class turtlebot(communicator):
 
 
         self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
-        self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.map.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
+        self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
         # self._map_sub = rospy.Subscriber('/map',PoseStamped,self.mapCallback, queue_size=3)
         # self._bmp_sub = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, turtlebot.setBumper, queue_size=3)
 
@@ -89,6 +89,15 @@ class turtlebot(communicator):
         rospy.sleep(self.sleeper)
         logger.info("Instantiation Complete.")
         print "Robot Created"
+
+    def storeGoal(self,msg):
+        goalX = tools.mapifyValue(msg.pose.position.x) -1
+        goalY = tools.mapifyValue(msg.pose.position.y)
+        goaltheta=tools.normalizeTheta((msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w))
+
+        self._goal_,self._current_ = self.map.storeGoal(goalX,goalY,goaltheta)
+
+
 
 
     """ Overridden or SubUsed functions """

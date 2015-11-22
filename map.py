@@ -14,10 +14,22 @@ from geometry_msgs.msg import Point
 # Subclass Information
 from communicator import communicator
 
+
+"""
+
+@TODO: Line 198 should be replaced with a 'is legal' function, and that function should be called in the turtlebot
+        class when the goal is set.
+
+
+
+"""
+
 class map():
     def __init__(self, name):
         self._startup = False ## initialized first to avoid hanging
         self._name_ = name
+
+        self.current_x,self.current_y,self.current_theta = None, None, None
 
         self.wall_list = []
         self.explored_nodes_list = []
@@ -47,6 +59,9 @@ class map():
         for i in xrange(20):
             self._start_populate()
         print "Map instantiated properly"
+        self._updateLocation()
+        if self.current_theta is None or self.current_x is None or self.current_y is None:
+            print "One is None:x,y,theta ",self.current_x,self.current_y,self.current_theta
         # logging.info("Colored map populated 20x to ensure no ROS errors")
 
 
@@ -154,47 +169,59 @@ class map():
         """
         return self._goal_[2]
 
+    def _updateLocation(self):
+        (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time.now())
+        self.current_x,self.current_y, self.current_z = p
+        self.current_theta = tools.normalizeTheta(q)
+
+        self.current_x = tools.mapifyValue(self.current_x)
+        self.current_y = tools.mapifyValue(self.current_y)
+
+        print "Robot is located at: ", self.current_x,self.current_y,self.current_theta
 
     def getNextWaypoint(self, start):
-        nodePath = self.getWaypoint((tools.mapifyValue(self.current_x)-1,
-                                     tools.mapifyValue(self.current_y)))
+        nodePath = self.getWaypoint((self.current_x-1,
+                                     self.current_y))
         return nodePath[0]
 
-    def storeGoal(self, msg):
+    def storeGoal(self, goalX, goalY, goalTheta):
         """
         This is the callback that is attached in the parent class. This catches rVis's 2D Nav Pose buttons
 
         :param msg:
         :return:
         """
+        print "Getting ready to store your goal"
         self.explored_nodes_list = []
         self.waypoint_list = []
         self.path_list = []
 
+        self.goalX,self.goalY,self.goaltheta = goalX,goalY,goalTheta
+        self._updateLocation()
 
-        (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
-        self.current_x,self.current_y, self.current_z = p
-        self.current_theta = tools.normalizeTheta(q)
+        """ Get's the current x,y,theta locations and stores them. """
+        while self.current_x is None or self.current_y is None or self.current_theta is None or \
+                (rospy.is_shutdown()):
+            self._updateLocation()
+            rospy.sleep(0.1)
 
 
-        self.goalX = tools.mapifyValue(msg.pose.position.x) -1
-        self.goalY = tools.mapifyValue(msg.pose.position.y)
-
-        while (self._map[self.goalY][self.goalX] != 0):
+        while (self._map[self.goalY][self.goalX] != 0) and (not rospy.is_shutdown()):
             self.goalX = self.goalX+1
 
-        self.goaltheta=tools.normalizeTheta((msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w))
         goal = (self.goalX, self.goalY)
         """ Stores the goal for a* and the goal for xytheta"""
         self._goal_pos = (self.goalX, self.goalY)
         self._goal_ = (self.goalX, self.goalY, self.goaltheta)
-        print self._goal_pos
 
+        self.getWaypoint((self.current_x-1,
+                          self.current_y))
 
-        # print 'Getting current location:',self.current_x, math.floor(self.current_x), int(math.floor(self.current_x))
-        self.getWaypoint((tools.mapifyValue(self.current_x)-1,
-                          tools.mapifyValue(self.current_y)))
+        return self._goal_, (self.current_x,self.current_y,self.current_theta)
+        #
+        # # print 'Getting current location:',self.current_x, math.floor(self.current_x), int(math.floor(self.current_x))
 
+        #
 
     def getNeighbors(self,x,y,threshold=99):
         """
