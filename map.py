@@ -158,6 +158,12 @@ class map():
         """
         return self._goal_[2]
 
+    def getRobotPosition(self):
+        return (self.current_x,self.current_y)
+
+    def getRobotAngle(self):
+        return self.current_theta
+
     def _updateLocation(self):
         (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time.now())
         self.current_x,self.current_y, self.current_z = p
@@ -198,9 +204,10 @@ class map():
             self._updateLocation()
             rospy.sleep(0.1)
 
+        print (int(self.goalY), int(self.goalX))
 
-        while (self._map[self.goalY][self.goalX] != 0) and (not rospy.is_shutdown()):
-            self.goalX = self.goalX+1
+        #while (self._map[int(self.goalY)][int(self.goalX)] != 0) and (not rospy.is_shutdown()):
+        #    self.goalX = self.goalX+1
 
         goal = (self.goalX, self.goalY)
         """ Stores the goal for a* and the goal for xytheta"""

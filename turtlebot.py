@@ -58,6 +58,9 @@ class turtlebot(communicator):
         self._name_ = name
         logger.info("Map Created")
 
+	self._x_offset = 0
+	self._y_offset = 0
+
 
 
 
@@ -69,7 +72,7 @@ class turtlebot(communicator):
 
         self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
         self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
-        self._local_cost = rospy.Subscriber('/move_base/local_costmap/costmap',OccupancyGrid,self.storeCostmap, queue_size=1)
+        # self._local_cost = rospy.Subscriber('/move_base/local_costmap/costmap',OccupancyGrid,self.storeCostmap, queue_size=1)
         # self._map_sub = rospy.Subscriber('/map',PoseStamped,self.mapCallback, queue_size=3)
         # self._bmp_sub = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, turtlebot.setBumper, queue_size=3)
 
@@ -94,6 +97,9 @@ class turtlebot(communicator):
         logger.info("Instantiation Complete.")
         print "Robot Created"
 
+
+	
+
     def storeGoal(self,msg):
         goalX = tools.mapifyValue(msg.pose.position.x) -1
         goalY = tools.mapifyValue(msg.pose.position.y)
@@ -102,7 +108,7 @@ class turtlebot(communicator):
         self._goal_,self._current_ = self.map.storeGoal(goalX,goalY,goaltheta)
 
         path = self.map.getNextWaypoint()
-        # print path
+        print path
 
 
 
@@ -131,8 +137,12 @@ class turtlebot(communicator):
         """
         pos,quat = self._quatFromMsg(msg)
         self._x, self._y, self._z = pos
+	self._x = self._x + self._x_offset
+	self._y = self._y + self._y_offset
         self._quatx, self._quaty, self._quatz, self._quatw = quat
         self._quat = (self._quatx, self._quaty, self._quatz, self._quatw)
+
+	self._theta = tools.normalizeTheta(self._quat)
 
     # def mapCallback(self,msg):
     #     """
@@ -154,6 +164,30 @@ class turtlebot(communicator):
         """
         self._publishTwist(0,0)
 
+    # this function creates the twist message and sends it at 10Hz for a given time
+    def setVel(self, lVel, aVel, time):
+        # Initialize the twist message and all it's attributes
+        twist = Twist()
+        twist.linear.x = lVel
+        twist.linear.y = 0
+        twist.linear.z = 0
+        twist.angular.x = 0
+        twist.angular.y = 0
+        twist.angular.z = aVel
+
+        # calculate how many times to loop
+        n = time*10;
+
+        # publish the message at 10Hz
+        while not rospy.is_shutdown() and n > 0:
+            n -= 1
+
+            pub.publish(twist)
+
+            rospy.sleep(0.1)
+
+        stop()
+
     def _spinWheels(self,u1,u2,timesec):
         """
         This will spin the left wheel u1 and the right wheel u2 for timesec <seconds>
@@ -172,10 +206,13 @@ class turtlebot(communicator):
         ## stop Robot
         self._stopRobot()
         return
+
+
+
     """ Big Movement Functions """
     def driveStraight(self, speed, distance):
         """
-        THis takes in a speed and distance and moves in the facing direction
+        This takes in a speed and distance and moves in the facing direction
         until it has reached the distance.
 
         NOTE: This function denotes it's travel by how far the 'odom' frame believes
@@ -287,13 +324,36 @@ class turtlebot(communicator):
     def run(self):
         while not rospy.is_shutdown():
             rospy.sleep(0.1)
+            print "tick"
             continue
 
     def main(self):
         try:
-            i = 0
+            self._x_offset, self._y_offset = self.map.getRobotPosition()
+
+	    self._x = self._x + self._x_offset
+	    self._y = self._y + self._y_offset
+
+	    print "goal: ", self.map.getRobotPosition()
+	    self._theta = self.map.getRobotAngle
+            self._goal_,self._current_ = self.map.storeGoal(self._x, self._y, tools.normalizeTheta(self._quat))
             while not rospy.is_shutdown():
-                rospy.sleep(0.1)
+                goalX, goalY, goalT = self._goal_
+                print "Goal position is ", goalX, goalY, goalT
+                print "Robot position is ", self._x, self._y, tools.normalizeTheta(self._quat)
+
+                if self.map.isAtGoalPosition((self._x, self._y)):
+                    print "At goal position"
+                    if not self.map.isAtGoalAngle(tools.normalizeTheta(self._quat)):
+                        # rotate to goal
+                        print "Rotating to goal angle"
+                        rospy.sleep(0.1)
+                    else:
+                        print "At goal angle"
+                        rospy.sleep(0.1)
+                else:
+                    print "Navigating to next waypoint"
+                    rospy.sleep(0.1)
                 continue
             """try:
                 self._odom_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(4.0))
