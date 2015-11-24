@@ -352,8 +352,9 @@ class turtlebot(communicator):
                         print "At goal angle"
                         rospy.sleep(0.1)
                 else:
-                    print "Navigating to next waypoint"
-                    rospy.sleep(0.1)
+                    print "Navigating to next waypoint: ", self.map.getNextWaypoint()
+		    # driveTo()
+                    rospy.sleep(1.0)
                 continue
             """try:
                 self._odom_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(4.0))

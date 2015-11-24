@@ -172,7 +172,7 @@ class map():
         self.current_x = tools.mapifyValue(self.current_x) - 1
         self.current_y = tools.mapifyValue(self.current_y)
 
-        print "Robot is located at: ", self.current_x,self.current_y,self.current_theta
+        # print "Robot is located at: ", self.current_x,self.current_y,self.current_theta
 
     def getNextWaypoint(self):
         nodePath = self.getWaypoint()
