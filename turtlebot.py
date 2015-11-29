@@ -58,8 +58,8 @@ class turtlebot(communicator):
         self._name_ = name
         logger.info("Map Created")
 
-	self._x_offset = 0
-	self._y_offset = 0
+        self._x_offset = 0
+        self._y_offset = 0
 
 
 
@@ -137,12 +137,12 @@ class turtlebot(communicator):
         """
         pos,quat = self._quatFromMsg(msg)
         self._x, self._y, self._z = pos
-	self._x = self._x + self._x_offset
-	self._y = self._y + self._y_offset
+        self._x = self._x + self._x_offset
+        self._y = self._y + self._y_offset
         self._quatx, self._quaty, self._quatz, self._quatw = quat
         self._quat = (self._quatx, self._quaty, self._quatz, self._quatw)
 
-	self._theta = tools.normalizeTheta(self._quat)
+        self._theta = tools.normalizeTheta(self._quat)
 
     # def mapCallback(self,msg):
     #     """
@@ -331,11 +331,11 @@ class turtlebot(communicator):
         try:
             self._x_offset, self._y_offset = self.map.getRobotPosition()
 
-	    self._x = self._x + self._x_offset
-	    self._y = self._y + self._y_offset
+            self._x = self._x + self._x_offset
+            self._y = self._y + self._y_offset
 
-	    print "goal: ", self.map.getRobotPosition()
-	    self._theta = self.map.getRobotAngle
+            print "goal: ", self.map.getRobotPosition()
+            self._theta = self.map.getRobotAngle
             self._goal_,self._current_ = self.map.storeGoal(self._x, self._y, tools.normalizeTheta(self._quat))
             while not rospy.is_shutdown():
                 goalX, goalY, goalT = self._goal_
@@ -353,7 +353,6 @@ class turtlebot(communicator):
                         rospy.sleep(0.1)
                 else:
                     print "Navigating to next waypoint: ", self.map.getNextWaypoint()
-		    # driveTo()
                     rospy.sleep(1.0)
                 continue
             """try:
