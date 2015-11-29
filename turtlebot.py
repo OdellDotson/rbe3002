@@ -115,6 +115,12 @@ class turtlebot(communicator):
     def storeCostmap(self, msg):
         self.local.storeCostmap(msg)
 
+        for i in self.local:
+            x,y,val = i
+            # print "They are: ",x,y,val
+            #self.map.addValue(x,y,val)
+
+
 
     """ Overridden or SubUsed functions """
     def _publishTwist(self, u, w):

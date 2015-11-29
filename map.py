@@ -57,6 +57,10 @@ class map():
         # logging.info("Colored map populated 20x to ensure no ROS errors")
 
 
+    def addValue(self, x,y,val):
+        self._map[y][x] = val
+
+
     def _start_populate(self, threshold =99):
         """
         This function publishes the walls and unexplored maps to the 'self._wall' and 'self._not_explored_nodes'
@@ -79,7 +83,7 @@ class map():
         for i in range(0,self._height): #height should be set to hieght of grid
             for j in range(0,self._width): #height should be set to hieght of grid
                 point = tools.makePoint(j,i,0)
-                if (self._map[i][j] == 100):
+                if (self._map[i][j] >50 ):
                     self.wall_list.append(point)
                 else:
                     self.not_explored_list.append(point)
@@ -93,6 +97,7 @@ class map():
 
 
     def _updateMap(self, msg):
+
         """
         This is the callback for when the '/map' topic publishes changes.
 
@@ -105,13 +110,17 @@ class map():
                                       msg.info.height,
                                       msg.info.width)
 
+
         self._height=msg.info.height
         self._width=msg.info.width
         self._pose=msg.info.origin
+        print "The real map's h and w", self._height, self._width
         if self._startup is True:
             self._repaint_map(baseMap=True)
         self._startup = True
 
+    def repaint(self):
+        self._repaint_map(baseMap=True)
 
     def _repaint_map(self, baseMap=False, path=False):
         """
