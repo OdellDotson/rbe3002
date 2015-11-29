@@ -61,7 +61,7 @@ class map():
         self._map[y][x] = val
 
 
-    def _start_populate(self, threshold =99):
+    def _start_populate(self, threshold =50):
         """
         This function publishes the walls and unexplored maps to the 'self._wall' and 'self._not_explored_nodes'
         publishers. This gives the map a basis to view what is occuring in realtime.
@@ -83,7 +83,7 @@ class map():
         for i in range(0,self._height): #height should be set to hieght of grid
             for j in range(0,self._width): #height should be set to hieght of grid
                 point = tools.makePoint(j,i,0)
-                if (self._map[i][j] >50 ):
+                if (self._map[i][j] > threshold ):
                     self.wall_list.append(point)
                 else:
                     self.not_explored_list.append(point)

@@ -6,10 +6,9 @@ import tf
 from nav_msgs.msg import GridCells
 from geometry_msgs.msg import Point
 
-cellW = 0.3
-cellH = 0.3
-## Created because the cell width and height are the same
-cell = 0.3
+
+## The resolution of the '/map' cells
+cell = 0.3 ## 0.3 m/cell
 
 def distFormula(point1, point2):
     """

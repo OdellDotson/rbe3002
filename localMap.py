@@ -3,6 +3,7 @@ __author__ = 'Troy Hughes'
 import rospy
 import tf
 import tools
+import math
 from nav_msgs.msg import OccupancyGrid
 
 class localMap():
@@ -34,15 +35,67 @@ class localMap():
                                       msg.info.width)
         self._mapL = msg.data
 
-        self._max_w = 37#msg.info.width
-        self._max_h = 37#msg.info.height
+        # self._max_w = 37#msg.info.width
+        # self._max_h = 37#msg.info.height
+        self._max_w = msg.info.width
+        self._max_h = msg.info.height
         self._pose = msg.info.origin.position
-        try:
+
+        try: ## Try to get the transform to the location of the robot.
             (p,q) = self._map_tfListener.lookupTransform("map","base_footprint",rospy.Time.now())
         except tf.Exception:
             print "Python can't read your future, calm down"
             return
-        self._ox,self._oy,_ = p
+
+        ## Set the offsets in the map space
+        self._ox,self._oy,_ = p                                 ## Get the position of the robot from the map to base footprint transform
+        self._ox = tools.mapifyValue(self._ox + self._pose.x + 1)   ## create a '/map' grid value from the sum of the robot location and the offset to the x min of the costmap
+        self._oy = tools.mapifyValue(self._oy + self._pose.y)   ## create a '/map' grid value from the sum of the robot location and the offset to the y min of the costmap
+
+        ## Reduce the resolutino on this map:
+        self._reducedMap, self._reduce_w, self._reduce_h = self._shrinkTwo()
+        print self._reducedMap
+
+    def _shrinkTwo(self):
+        """
+        This function takes the stored Costmap and dialates all the pixles
+        on it by 1 in the left and right direction. This means that if the
+        whole image 'was' an 60x60 image, this will reduce it to a 20X20 image
+
+        NOTE: This is done because the '/map' resolution is 0.3 and the '/costmap' resolution is 0.05.
+        This will make them compariable.
+        :return: List of Lists as a Map
+        """
+        otherMap = []
+        temp = []
+        yvalslist = []
+        counter = 0
+        num_x = 0
+        num_y = 0
+        for y,row in enumerate(self._mapLL):    ## For every row and every value in every row
+            yvals = []
+            for x,val in enumerate(row):
+                counter = counter + val         ## Accumulate a value for each 'row' shrinker
+                if x % 6 == 5:                  ## if this is the 3rd value, append it to the yvals list and reset counter
+                    yvals.append(counter)
+                    counter = 0
+                num_x = x                       ## use this to know the length of the list.
+            yvalslist.append(yvals)
+            if y % 6 == 5:                      ## if it's the 3rd row
+                for i in xrange(int(math.floor(num_x/6.0))):## go through the 3 lists that you've made and find the average
+                                                        ## values for each column so that the 6x6 square is averaged into 1
+                    #print yvalslist, len(yvalslist[0]),len(yvalslist[1]),len(yvalslist[2]),(int(math.floor(num_x/3.0))+1)
+
+                    average = yvalslist[0][i]+yvalslist[1][i]+yvalslist[2][i]+yvalslist[3][i]+yvalslist[4][i]+yvalslist[5][i]
+                    temp.append(average/36)
+                otherMap.append(temp)
+                temp = []                       ## reset the temp list
+                yvalslist = []                  ## reset the yvalslist
+            num_y = y
+
+        return otherMap, int(math.floor(num_x/6.0)), int(math.floor(num_y/6.0))
+
+
 
 
     def next(self):
@@ -53,30 +106,33 @@ class localMap():
         """
         if self._doneIter:raise StopIteration
         x,y = self._x, self._y
-        print "Running the iterator for values:",x,y," Max values:",self._max_h, self._max_w, "offset: ", self._ox, self._oy
+        # print "Running the iterator for values:",x,y," Max values:",self._max_h, self._max_w, "offset: ", self._ox, self._oy
+        # self._oxgrid = self._ox / 0.05 # TODO: Make this read in from the actual message, I think the resolution is there
+        # self._oygrid = self._oy / 0.05 # TODO: somewhere, but I'm not sure where.
 
-        self._oxgrid = self._ox / 0.05 # TODO: Make this read in from the actual message, I think the resolution is there
-        self._oygrid = self._oy / 0.05 # TODO: somewhere, but I'm not sure where.
-        if x < self._max_w -1:
+
+        if x < self._reduce_w -1:
             self._x = self._x + 1
-        elif x == self._max_w -1:
-            if self._y == self._max_h-1:
+        elif x == self._reduce_w -1:
+            if y == self._reduce_h-2:
                 self._doneIter = True
-                self._x, self._y = 0,0
-            elif self._y < self._max_h -1:
+                self._x, self._y = 1,1
+            elif y < self._reduce_h -2:
                 self._x = 0
                 self._y = self._y + 1
 
-        elif x > self._max_w -1 or y > self._max_h -1:
+        elif x > self._reduce_w -1 or y > self._reduce_h -1:
             raise RuntimeError("Values too large")
 
-        print self._max_h -1 -43
-        return (x,y,self._mapLL[y - int(self._oygrid)][x - int(self._oxgrid)]) # TODO: I don't actually know what to be adding or subtracting here. Fix pls
+
+        return ((x - self._ox),
+                (y - self._oy),
+                self._reducedMap[y][x])
 
 
     def __iter__(self):
         self._x, self._y = 0,0
-        print "Iterating local map:"
+        print "Iterating local map:", len(self._reducedMap), len(self._reducedMap[0]), self._reduce_w, self._reduce_h
         return self
 
     # def givePoint(self,x,y):
