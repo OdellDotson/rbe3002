@@ -72,7 +72,7 @@ class turtlebot(communicator):
 
         self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
         self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
-        # self._local_cost = rospy.Subscriber('/move_base/local_costmap/costmap',OccupancyGrid,self.storeCostmap, queue_size=1)
+        self._local_cost = rospy.Subscriber('/move_base/local_costmap/costmap',OccupancyGrid,self.storeCostmap, queue_size=1)
         # self._map_sub = rospy.Subscriber('/map',PoseStamped,self.mapCallback, queue_size=3)
         # self._bmp_sub = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, turtlebot.setBumper, queue_size=3)
 
@@ -116,8 +116,6 @@ class turtlebot(communicator):
         self.local.storeCostmap(msg)
 
 
-
-
     """ Overridden or SubUsed functions """
     def _publishTwist(self, u, w):
         """
@@ -144,17 +142,6 @@ class turtlebot(communicator):
 
         self._theta = tools.normalizeTheta(self._quat)
 
-    # def mapCallback(self,msg):
-    #     """
-    #     This will handle the map frame location of the robot.
-    #
-    #     :param msg: this is a message form the odom subscriber
-    #     :return: None
-    #     """
-    #     pos,quat = self._quatFromMsg(msg)
-    #     self._mapx, self._mapy, self._mapz = pos
-    #     self._map_quatx, self._map_quaty, self._map_quatz, self._map_quatw = quat
-    #     self._map_quat = (self._map_quatx, self._map_quaty, self._map_quatz, self._map_quatw)
 
     """------------------General Movement------------------"""
     """ Movement Helpers """
@@ -334,32 +321,28 @@ class turtlebot(communicator):
             self._x = self._x + self._x_offset
             self._y = self._y + self._y_offset
 
-            print "goal: ", self.map.getRobotPosition()
+            #print "goal: ", self.map.getRobotPosition()
             self._theta = self.map.getRobotAngle
             self._goal_,self._current_ = self.map.storeGoal(self._x, self._y, tools.normalizeTheta(self._quat))
             while not rospy.is_shutdown():
                 goalX, goalY, goalT = self._goal_
-                print "Goal position is ", goalX, goalY, goalT
-                print "Robot position is ", self._x, self._y, tools.normalizeTheta(self._quat)
+                #print "Goal position is ", goalX, goalY, goalT
+                #print "Robot position is ", self._x, self._y, tools.normalizeTheta(self._quat)
 
                 if self.map.isAtGoalPosition((self._x, self._y)):
-                    print "At goal position"
+                    #print "At goal position"
                     if not self.map.isAtGoalAngle(tools.normalizeTheta(self._quat)):
                         # rotate to goal
-                        print "Rotating to goal angle"
+                        #print "Rotating to goal angle"
                         rospy.sleep(0.1)
                     else:
-                        print "At goal angle"
+                        #print "At goal angle"
                         rospy.sleep(0.1)
                 else:
-                    print "Navigating to next waypoint: ", self.map.getNextWaypoint()
+                    #print "Navigating to next waypoint: ", self.map.getNextWaypoint()
                     rospy.sleep(1.0)
                 continue
-            """try:
-                self._odom_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(4.0))
-            except tf.Exception:
-                print "Exception thrown"
-                return
+            """
             p,q = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
             print p,q
             self.rotate(90)

@@ -132,8 +132,9 @@ def dialateOccupancyMap(map):
         for x,column in enumerate(row):
             if map[y][x] == 100:
                 taken_spaces.append((x,y)) ## (x,y)
-    max_y = y
-    max_x = x
+            max_x = x
+            max_y = y
+
     ## Dialate all the spaces in the list.
     for space in taken_spaces:
         map = dialateNode(map,space,max_x,max_y)
