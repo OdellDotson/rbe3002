@@ -52,9 +52,16 @@ class localMap():
 
 
     def next(self):
+        """
+        Odel, this is the spot where the values are chosen and returned.
+
+
+        :return:
+        """
         if self._doneIter:raise StopIteration
 
         x,y = self._x, self._y
+
         if x < self._max_w -1:
             self._x = self._x + 1
         elif x == self._max_w -1:

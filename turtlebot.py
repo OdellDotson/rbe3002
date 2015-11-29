@@ -118,7 +118,7 @@ class turtlebot(communicator):
         for i in self.local:
             x,y,val = i
             # print "They are: ",x,y,val
-            #self.map.addValue(x,y,val)
+            self.map.addValue(x,y,val)
 
 
 
