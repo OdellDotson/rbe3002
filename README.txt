@@ -120,5 +120,5 @@ UPDATE: 11/30/2015 :: 2AM:
 	TEST WITH GMapping: I'm not sure how this will port over to GMapping. We need to work on this. 
 	OBSTICAL EXPANDING: Already exists by using the costmap. 
 	MOVEMENT: Will be bad but we have to do it to get the signoffs.
-	WAYPOINTS: We need to chop our waypoints into 1 meter waypoints. They are currently not. 
+	WAYPOINTS: We need to chop our waypoints into 1 meter waypoints. They are currently not.
 
