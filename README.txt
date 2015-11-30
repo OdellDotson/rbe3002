@@ -119,5 +119,6 @@ UPDATE: 11/30/2015 :: 2AM:
 	MOVING FORWARD: We need to update the Heuristic to use the cost values so that it stays in 'the center' of the world while it moves. 
 	TEST WITH GMapping: I'm not sure how this will port over to GMapping. We need to work on this. 
 	OBSTICAL EXPANDING: Already exists by using the costmap. 
-	MOVEMENT: Will be bad but we have to do it to get the signoffs. 
+	MOVEMENT: Will be bad but we have to do it to get the signoffs.
+	WAYPOINTS: We need to chop our waypoints into 1 meter waypoints. They are currently not. 
 

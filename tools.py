@@ -167,4 +167,9 @@ def mapifyValue(value):
 def demapifyValue(value):
     return value*cell
 
+def gmapifyValue(value):
+    return int(round(value/0.05))
+
+def degmapifyValue(value):
+    return int(round(value*0.5))
 

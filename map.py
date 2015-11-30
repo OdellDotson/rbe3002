@@ -9,11 +9,6 @@ from nav_msgs.msg import GridCells
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Point
 
-# import logging
-
-# Subclass Information
-from communicator import communicator
-
 
 
 class map():
