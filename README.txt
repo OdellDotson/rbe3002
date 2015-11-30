@@ -113,5 +113,11 @@ What the code does:
 		- The map screens out places of 20 value and if a path can't be found ups that threshold to 30, then if a path can't be found to 40.
 			Doing it this way would guarentee the 'safest' path at all times, and possibly an equally fast path. However safest != fastest
 
-
+UPDATE: 11/30/2015 :: 2AM:
+	- We now have the local map displaying on the global map in rViz. 
+	BUGS: the map is displacing the old values. So, in map.addValue there should be some latency. So if the value was set to 100 and then gets set to 0, it should be weery of just dropping so quicly. Maybe average them together each time to protect form errors and rapid changes. 
+	MOVING FORWARD: We need to update the Heuristic to use the cost values so that it stays in 'the center' of the world while it moves. 
+	TEST WITH GMapping: I'm not sure how this will port over to GMapping. We need to work on this. 
+	OBSTICAL EXPANDING: Already exists by using the costmap. 
+	MOVEMENT: Will be bad but we have to do it to get the signoffs. 
 
