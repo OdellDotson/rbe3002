@@ -31,7 +31,7 @@ class localMap():
     def storeCostmap(self, msg, gMap=True):
         print "\n\nSTORING THE COSTMAP\n\n"
         try:
-            self._map_tfListener.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(0.2))
+            self._map_tfListener.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(0.5))
         except tf.Exception:
             print "TF library chunkin out broski"
             return
@@ -47,7 +47,7 @@ class localMap():
         self._pose = msg.info.origin.position
 
         try: ## Try to get the transform to the location of the robot.
-            (p,q) = self._map_tfListener.lookupTransform("map","base_footprint",rospy.Time.now())
+            (p,q) = self._map_tfListener.lookupTransform("map","base_footprint",rospy.Time(0))
         except tf.Exception:
             print "Python can't read your future, calm down"
             return
@@ -55,6 +55,9 @@ class localMap():
         self._reducedMap = self._mapLL
         self._reduce_w = self._max_w
         self._reduce_h = self._max_h
+
+        # print "Reduced map is: "
+        # print self._reducedMap
 
         if gMap: ## IF this is being run on the gMap
             self._ox,self._oy,_ = p                                 ## Get the position of the robot from the map to base footprint transform
