@@ -15,6 +15,7 @@ import math
 # Subclass Information
 from communicator import communicator
 from map import map
+from gMap import gMap
 from localMap import localMap
 
 import logging
@@ -40,12 +41,13 @@ class turtlebot(communicator):
         ## Loggers and node information
         rospy.init_node(name)
 
-        self.map = map(name+"Map")
+        self.map = gMap(name+"Map")
         self.local = localMap(name+'Local Map')
         self._name_ = name
 
-        self._x_offset = 0
-        self._y_offset = 0
+        self._x_offset = None
+        self._y_offset = None
+        self._x, self._y = 0,0
 
 
         ## Pub/Sub information
@@ -77,8 +79,12 @@ class turtlebot(communicator):
         self.sleeper = rospy.Duration(1)
         rospy.sleep(self.sleeper)
 
+        print '\n\n'
         print "Robot Created"
-
+        print "Robot Created"
+        print "Robot Created"
+        print "Robot Created"
+        print '\n\n'
 
 	
 
@@ -126,7 +132,14 @@ class turtlebot(communicator):
         :param msg: this is a message form the odom subscriber
         :return: None
         """
+        if msg is None:
+            raise RuntimeError("Message is None")
+        if self._x_offset is None or self._y_offset is None:
+            # print "Offsets are none"
+            return
+
         pos,quat = self._quatFromMsg(msg)
+        # print "HERE THEY ARE: ",pos, quat, self._x, self._y, self._x_offset, self._y_offset
         self._x, self._y, self._z = pos
         self._x = self._x + self._x_offset
         self._y = self._y + self._y_offset
@@ -309,7 +322,11 @@ class turtlebot(communicator):
 
     def main(self):
         try:
-            self._x_offset, self._y_offset = self.map.getRobotPosition()
+
+            while self._x_offset is None and not (rospy.is_shutdown()):
+                self._x_offset, self._y_offset = self.map.getRobotPosition()
+                print "They're none"
+                rospy.sleep(0.2)
 
             self._x = self._x + self._x_offset
             self._y = self._y + self._y_offset

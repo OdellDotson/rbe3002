@@ -37,13 +37,17 @@ class gMap():
 
 
     def _updateMap(self,msg):
+        print "gMap is being updated"
+        # print msg
+
         self._map = tools.lMaptoLLMap(msg.data,
                                       msg.info.height,
-                                      msg.info.weight)
+                                      msg.info.width)
         self._max_h = msg.info.height
-        self._max_w = msg.info.weight
+        self._max_w = msg.info.width
         self._pose = msg.info.origin
         self._mapSet = True
+        self._updateLocation()
 
 
 
@@ -85,10 +89,14 @@ class gMap():
 
 
     def _updateLocation(self):
+        print "UPdating location"
         try:
             self._map_list.waitForTransform('map', 'base_footprint', rospy.Time.now(), rospy.Duration(0.5))
         except tf.Exception:
             print "Waiting for transform failed"
+            self.current_x = tools.gmapifyValue(0)
+            self.current_y = tools.gmapifyValue(0)
+            self.current_z = tools.gmapifyValue(0)
             return False
 
         (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time.now())
@@ -97,8 +105,9 @@ class gMap():
 
         self.current_x = tools.gmapifyValue(x)
         self.current_y = tools.gmapifyValue(y)
-        self.current_z = tools.gmpaifyValue(z)
+        self.current_z = tools.gmapifyValue(z)
         self._currentSet = True
+        print "The values are: ",self.current_x, self.current_y
         return True
 
     def repaint(self):
@@ -293,6 +302,9 @@ class gMap():
         return self._goal_[2]
 
     def getRobotPosition(self):
+        if self.current_x is None:
+            print "The positions aren't set", self.current_x, self.current_y
+            raise RuntimeError("Fuck this")
         return (self.current_x,self.current_y)
 
     def getRobotAngle(self):

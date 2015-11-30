@@ -23,8 +23,13 @@ class localMap():
         self._x, self._y = None, None
         self._doneIter = False
 
+        self._reducedMap = None
+        self._reduce_w = None
+        self._reduce_h = None
+
 
     def storeCostmap(self, msg, gMap=True):
+        print "\n\nSTORING THE COSTMAP\n\n"
         try:
             self._map_tfListener.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(0.2))
         except tf.Exception:
@@ -46,6 +51,11 @@ class localMap():
         except tf.Exception:
             print "Python can't read your future, calm down"
             return
+
+        self._reducedMap = self._mapLL
+        self._reduce_w = self._max_w
+        self._reduce_h = self._max_h
+
         if gMap: ## IF this is being run on the gMap
             self._ox,self._oy,_ = p                                 ## Get the position of the robot from the map to base footprint transform
             self._ox = tools.gmapifyValue(self._ox + self._pose.x)   ## create a '/map' grid value from the sum of the robot location and the offset to the x min of the costmap
@@ -65,9 +75,11 @@ class localMap():
             # print self._reducedMap
 
 
+
+
     def _shrinkTwo(self):
         """
-        This is a hardcoded piece of shit. Hate it. 
+        This is a hardcoded piece of shit. Hate it.
 
         This function takes the stored Costmap and dialates all the pixles
         on it by 1 in the left and right direction. This means that if the
