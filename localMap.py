@@ -24,7 +24,7 @@ class localMap():
         self._doneIter = False
 
 
-    def storeCostmap(self, msg):
+    def storeCostmap(self, msg, gMap=True):
         try:
             self._map_tfListener.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(0.2))
         except tf.Exception:
@@ -46,21 +46,29 @@ class localMap():
         except tf.Exception:
             print "Python can't read your future, calm down"
             return
+        if gMap: ## IF this is being run on the gMap
+            self._ox,self._oy,_ = p                                 ## Get the position of the robot from the map to base footprint transform
+            self._ox = tools.gmapifyValue(self._ox + self._pose.x)   ## create a '/map' grid value from the sum of the robot location and the offset to the x min of the costmap
+            self._oy = tools.gmapifyValue(self._oy + self._pose.y)   ## create a '/map' grid value from the sum of the robot location and the offset to the y min of the costmap
 
-        ## Set the offsets in the map space
-        self._ox,self._oy,_ = p                                 ## Get the position of the robot from the map to base footprint transform
-        self._ox = tools.mapifyValue(self._ox + self._pose.x + 1)   ## create a '/map' grid value from the sum of the robot location and the offset to the x min of the costmap
-        self._oy = tools.mapifyValue(self._oy + self._pose.y)   ## create a '/map' grid value from the sum of the robot location and the offset to the y min of the costmap
+            self._reducedMap = self._mapLL
+            self._reduce_w = self._max_w
+            self._reduce_h = self._max_h
+        else: ## IF this is being run in the simulator
+            ## Set the offsets in the map space
+            self._ox,self._oy,_ = p                                 ## Get the position of the robot from the map to base footprint transform
+            self._ox = tools.mapifyValue(self._ox + self._pose.x + 1)   ## create a '/map' grid value from the sum of the robot location and the offset to the x min of the costmap
+            self._oy = tools.mapifyValue(self._oy + self._pose.y)   ## create a '/map' grid value from the sum of the robot location and the offset to the y min of the costmap
 
-        ## Reduce the resolutino on this map:
-        # self._reducedMap, self._reduce_w, self._reduce_h = self._shrinkTwo()
-        # print self._reducedMap
-        self._reducedMap = self._mapLL
-        self._reduce_w = self._max_w
-        self._reduce_h = self._max_h
+            ## Reduce the resolutino on this map:
+            self._reducedMap, self._reduce_w, self._reduce_h = self._shrinkTwo()
+            # print self._reducedMap
+
 
     def _shrinkTwo(self):
         """
+        This is a hardcoded piece of shit. Hate it. 
+
         This function takes the stored Costmap and dialates all the pixles
         on it by 1 in the left and right direction. This means that if the
         whole image 'was' an 60x60 image, this will reduce it to a 20X20 image
@@ -109,10 +117,6 @@ class localMap():
         """
         if self._doneIter:raise StopIteration
         x,y = self._x, self._y
-        # print "Running the iterator for values:",x,y," Max values:",self._max_h, self._max_w, "offset: ", self._ox, self._oy
-        # self._oxgrid = self._ox / 0.05 # TODO: Make this read in from the actual message, I think the resolution is there
-        # self._oygrid = self._oy / 0.05 # TODO: somewhere, but I'm not sure where.
-
 
         if x < self._reduce_w -1:
             self._x = self._x + 1

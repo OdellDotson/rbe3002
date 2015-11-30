@@ -83,14 +83,20 @@ class turtlebot(communicator):
 	
 
     def storeGoal(self,msg):
-        goalX = tools.mapifyValue(msg.pose.position.x) -1
-        goalY = tools.mapifyValue(msg.pose.position.y)
+        # goalX = tools.mapifyValue(msg.pose.position.x) -1
+        # goalY = tools.mapifyValue(msg.pose.position.y)
+        goalX = tools.gmapifyValue(msg.pose.position.x)
+        goalY = tools.gmapifyValue(msg.pose.position.y)
         goaltheta=tools.normalizeTheta((msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w))
 
         self._goal_,self._current_ = self.map.storeGoal(goalX,goalY,goaltheta)
 
-        path = self.map.getNextWaypoint()
-        print path
+        try:
+            path = self.map.getNextWaypoint()
+            print path
+        except RuntimeError,e:
+            print e
+        return
 
 
 
