@@ -114,10 +114,9 @@ class turtlebot(communicator):
 
     def storeCostmap(self, msg):
         self.local.storeCostmap(msg)
-
+        print self.local
         for i in self.local:
             x,y,val = i
-            # print "They are: ",x,y,val
             self.map.addValue(x,y,val)
 
 
