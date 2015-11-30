@@ -39,32 +39,15 @@ class turtlebot(communicator):
         """
         ## Loggers and node information
         rospy.init_node(name)
-        """ Setting up the logger first """
-        logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename="Whatislove.txt",
-                    filemode='w')
-        logger = logging.getLogger(__name__)
-        logger.info("Logger started for: "+name)
-        logger.info("Why is this doing this... :( ")
 
-
-        logger.setLevel(logging.INFO)
-        logger.info("Node created with name: "+name)
-        logger.info("Creating Map Next")
         self.map = map(name+"Map")
         self.local = localMap(name+'Local Map')
         self._name_ = name
-        logger.info("Map Created")
 
         self._x_offset = 0
         self._y_offset = 0
 
 
-
-
-        logger.info("Creating Publishers and Subscribers")
         ## Pub/Sub information
         self._vel_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size=1)
         # self._mov_pub = rospy.Publisher('/move_base/goal',PoseStamped,queue_size=1)
@@ -77,7 +60,6 @@ class turtlebot(communicator):
         # self._bmp_sub = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, turtlebot.setBumper, queue_size=3)
 
 
-        logger.info("Creating TF Listeners and Broadcasters")
         #### Private variables that get updated by callbacks.
         ## Odom Handlers ##
         self._odom_list = tf.TransformListener()
@@ -94,7 +76,7 @@ class turtlebot(communicator):
         ## After creation, wait 1 second in order to ensure that your
         self.sleeper = rospy.Duration(1)
         rospy.sleep(self.sleeper)
-        logger.info("Instantiation Complete.")
+
         print "Robot Created"
 
 
@@ -361,6 +343,6 @@ class turtlebot(communicator):
 
 
 
-Turtle = turtlebot("HulkHogan")
+Turtle = turtlebot("DeezNuts")
 Turtle.main()
 
