@@ -30,7 +30,7 @@ class map():
         self.waypoint_list = []
 
 
-        self._map_sub = rospy.Subscriber('/map', OccupancyGrid , self._updateMap)
+        self._map_sub = rospy.Subscriber('/move_base/global_costmap/costmap', OccupancyGrid , self._updateMap)
 
         self._walls = rospy.Publisher('/walls', GridCells, queue_size=1)
         self._explored_nodes = rospy.Publisher('/explored_nodes', GridCells, queue_size=1)
@@ -41,9 +41,10 @@ class map():
         self._map_list = tf.TransformListener()
 
         # logging.info("Waiting for the _map to contain valid informaiton.")
-
-        while self._startup is False:
-            rospy.sleep(0.1)
+        print "Waiting for global costmap to publish"
+        rospy.sleep(5)
+        while self._startup is False and (not rospy.is_shutdown()):
+            rospy.sleep(0.5)
             print "Map is none..."
             continue
 
@@ -174,6 +175,11 @@ class map():
         return self.current_theta
 
     def _updateLocation(self):
+        try:
+            self._map_list.waitForTransform('map', 'base_footprint', rospy.Time.now(), rospy.Duration(0.5))
+        except tf.Exception:
+            print "TF library chunkin out broski"
+            return
         (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time.now())
         self.current_x,self.current_y, self.current_z = p
         self.current_theta = tools.normalizeTheta(q)

@@ -53,8 +53,11 @@ class localMap():
         self._oy = tools.mapifyValue(self._oy + self._pose.y)   ## create a '/map' grid value from the sum of the robot location and the offset to the y min of the costmap
 
         ## Reduce the resolutino on this map:
-        self._reducedMap, self._reduce_w, self._reduce_h = self._shrinkTwo()
-        print self._reducedMap
+        # self._reducedMap, self._reduce_w, self._reduce_h = self._shrinkTwo()
+        # print self._reducedMap
+        self._reducedMap = self._mapLL
+        self._reduce_w = self._max_w
+        self._reduce_h = self._max_h
 
     def _shrinkTwo(self):
         """
