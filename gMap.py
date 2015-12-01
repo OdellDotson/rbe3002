@@ -28,16 +28,18 @@ class gMap():
 
         self._map_list = tf.TransformListener()
 
-        self._map_sub = rospy.Subscriber('/move_base/global_costmap/costmap', OccupancyGrid , self._updateMap)
+        # self._map_sub = rospy.Subscriber('/move_base/global_costmap/costmap_updates', OccupancyGrid , self._updateMap)
+
+
+        print "gMap has been created",self._height
 
 
 
-
-
-
+    def updateMap(self,msg):
+        self._updateMap(msg)
 
     def _updateMap(self,msg):
-        print "gMap is being updated"
+        print "_updateMap has been called"
         # print msg
 
         self._map = tools.lMaptoLLMap(msg.data,
@@ -46,6 +48,11 @@ class gMap():
         self._max_h = msg.info.height
         self._max_w = msg.info.width
         self._pose = msg.info.origin
+        #
+        # self._newX = msg.x
+        # self._newY = msg.y
+
+
         self._mapSet = True
         self._updateLocation()
 
@@ -58,8 +65,9 @@ class gMap():
         try:
             self._map[y][x] = ((self._map[y][x])*(0.25) + value*(0.75))/2.0
         except IndexError,e:
-            print "Error in addValue"
-            print e
+            # print "Error in addValue"
+            # print e
+            t = 0
 
 
     def storeGoal(self, goalX, goalY, goalTheta):
@@ -89,9 +97,10 @@ class gMap():
 
 
     def _updateLocation(self):
-        print "UPdating location"
+
+        print "Updating location"
         try:
-            self._map_list.waitForTransform('map', 'base_footprint', rospy.Time.now(), rospy.Duration(0.5))
+            self._map_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(0.5))
         except tf.Exception:
             print "Waiting for transform failed"
             self.current_x = tools.gmapifyValue(0)
@@ -99,7 +108,7 @@ class gMap():
             self.current_z = tools.gmapifyValue(0)
             return False
 
-        (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time.now())
+        (p,q) = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
         x,y,z = p
         self.current_theta = tools.normalizeTheta(q)
 
@@ -108,6 +117,14 @@ class gMap():
         self.current_z = tools.gmapifyValue(z)
         self._currentSet = True
         print "The values are: ",self.current_x, self.current_y
+
+        # self.current_x = tools.gmapifyValue(self._newX)
+        # self.current_y = tools.gmapifyValue(self._newY)
+
+
+        self._currentSet = True
+        # print "The values are: ",self.current_x, self.current_y
+
         return True
 
     def repaint(self):

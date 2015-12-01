@@ -23,6 +23,7 @@ import logging
 #Message Types
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry, GridCells, OccupancyGrid
+from map_msgs.msg import OccupancyGridUpdate
 from geometry_msgs.msg import PoseStamped
 
 class turtlebot(communicator):
@@ -58,7 +59,8 @@ class turtlebot(communicator):
         self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
         self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
         self._local_cost = rospy.Subscriber('/move_base/local_costmap/costmap',OccupancyGrid,self.storeCostmap, queue_size=1)
-        # self._map_sub = rospy.Subscriber('/map',PoseStamped,self.mapCallback, queue_size=3)
+        # self._map_sub = rospy.Subscriber('/move_base/global_costmap/costmap_updates', OccupancyGridUpdate , self._updateMap, queue_size=1)
+        self._map_sub = rospy.Subscriber('/map', OccupancyGrid, self._updateMap, queue_size=1)
         # self._bmp_sub = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, turtlebot.setBumper, queue_size=3)
 
 
@@ -86,7 +88,6 @@ class turtlebot(communicator):
         print "Robot Created"
         print '\n\n'
 
-	
 
     def storeGoal(self,msg):
         # goalX = tools.mapifyValue(msg.pose.position.x) -1
@@ -113,6 +114,10 @@ class turtlebot(communicator):
             self.map.addValue(x,y,val)
         self.map.repaint()
 
+    def _updateMap(self, msg):
+        print msg
+        # print "_updateMap has been called"
+        self.map.updateMap(msg)
 
 
     """ Overridden or SubUsed functions """
@@ -324,34 +329,37 @@ class turtlebot(communicator):
         try:
 
             while self._x_offset is None and not (rospy.is_shutdown()):
-                self._x_offset, self._y_offset = self.map.getRobotPosition()
-                print "They're none"
+                try:
+                    self._x_offset, self._y_offset = self.map.getRobotPosition()
+                except Exception,e:
+                    print "They're none",e
                 rospy.sleep(0.2)
-
-            self._x = self._x + self._x_offset
-            self._y = self._y + self._y_offset
-
-            #print "goal: ", self.map.getRobotPosition()
-            self._theta = self.map.getRobotAngle
-            self._goal_,self._current_ = self.map.storeGoal(self._x, self._y, tools.normalizeTheta(self._quat))
             while not rospy.is_shutdown():
-                goalX, goalY, goalT = self._goal_
-                #print "Goal position is ", goalX, goalY, goalT
-                #print "Robot position is ", self._x, self._y, tools.normalizeTheta(self._quat)
-
-                if self.map.isAtGoalPosition((self._x, self._y)):
-                    #print "At goal position"
-                    if not self.map.isAtGoalAngle(tools.normalizeTheta(self._quat)):
-                        # rotate to goal
-                        #print "Rotating to goal angle"
-                        rospy.sleep(0.1)
-                    else:
-                        #print "At goal angle"
-                        rospy.sleep(0.1)
-                else:
-                    #print "Navigating to next waypoint: ", self.map.getNextWaypoint()
-                    rospy.sleep(1.0)
-                continue
+                rospy.sleep(0.2)
+            # self._x = self._x + self._x_offset
+            # self._y = self._y + self._y_offset
+            #
+            # #print "goal: ", self.map.getRobotPosition()
+            # self._theta = self.map.getRobotAngle
+            # self._goal_,self._current_ = self.map.storeGoal(self._x, self._y, tools.normalizeTheta(self._quat))
+            # while not rospy.is_shutdown():
+            #     goalX, goalY, goalT = self._goal_
+            #     #print "Goal position is ", goalX, goalY, goalT
+            #     #print "Robot position is ", self._x, self._y, tools.normalizeTheta(self._quat)
+            #
+            #     if self.map.isAtGoalPosition((self._x, self._y)):
+            #         #print "At goal position"
+            #         if not self.map.isAtGoalAngle(tools.normalizeTheta(self._quat)):
+            #             # rotate to goal
+            #             #print "Rotating to goal angle"
+            #             rospy.sleep(0.1)
+            #         else:
+            #             #print "At goal angle"
+            #             rospy.sleep(0.1)
+            #     else:
+            #         #print "Navigating to next waypoint: ", self.map.getNextWaypoint()
+            #         rospy.sleep(1.0)
+            #     continue
             """
             p,q = self._map_list.lookupTransform("map","base_footprint",rospy.Time(0))
             print p,q

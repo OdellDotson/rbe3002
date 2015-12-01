@@ -25,7 +25,7 @@ class map():
         self.waypoint_list = []
 
 
-        self._map_sub = rospy.Subscriber('/move_base/global_costmap/costmap', OccupancyGrid , self._updateMap)
+        self._map_sub = rospy.Subscriber('/move_base/global_costmap/costmap_updates', OccupancyGrid , self._updateMap)
 
         self._walls = rospy.Publisher('/walls', GridCells, queue_size=1)
         self._explored_nodes = rospy.Publisher('/explored_nodes', GridCells, queue_size=1)
