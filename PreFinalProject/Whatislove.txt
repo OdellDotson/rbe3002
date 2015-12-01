@@ -1,0 +1,2 @@
+11-14 22:37 root         INFO     Logger started for: HulkHogan
+11-14 22:37 root         INFO     Why is this doing this... :( 
