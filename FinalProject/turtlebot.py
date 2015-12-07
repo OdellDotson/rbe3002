@@ -51,6 +51,7 @@ class turtlebot():
 
         ## Pub/Sub information
         self._drivePublisher = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
+        self._cmdVelPub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=1)
 
         self._baseResultSubscriber = rospy.Subscriber('/move_base/result',MoveBaseActionResult,self._storeMoveBaseResult, queue_size=1)
 
@@ -71,7 +72,8 @@ class turtlebot():
         # self._goal_list = tf.TransformListener()
         #
         # #### Private robot Information
-        # self._wheelbase = wheelbase
+        self._wheelbase = wheelbase
+        self._startupSpinVel = None
 
         ## After creation, wait 1 second in order to ensure that your
         self.sleeper = rospy.Duration(1)
@@ -119,11 +121,18 @@ class turtlebot():
             print "The Robot cannot reach the position you wish to go to, please try again"
         else:
             raise RuntimeError("A case we did not think of has occured, fuck that.")
-        
+
 
 
     """------------------General Movement------------------"""
     def driveTo(self,x,y,theta):
+        """
+        This will publish a PoseStampped message to tell the robot to move to the x,y,theta position on the map
+        :param x:
+        :param y:
+        :param theta:
+        :return:None
+        """
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.pose.position.x = x
@@ -138,6 +147,45 @@ class turtlebot():
             raise NotImplementedError("Non-[0,0,0,1] pose's are not implemented")
 
         self._drivePublisher.publish(msg)
+
+    def startupSpin(self, timeToSpin):
+        """
+        This will be the method that causes the robot to spin about it's axis for 'timeToSpin' seconds. this will
+        stop the robot when it is done spinning for timeToSpin seconds.
+
+        :param timeToSpin: <int> the length of time for the robot to spin in a circle
+        :return: None
+        """
+        u1 = self._startupSpinVel
+        u2 = -self._startupSpinVel
+
+        lin_vel = (0.5)*(u1 + u2)
+        ang_vel = (1/(self._wheelbase))*(u1-u2)
+
+        start = time.time()
+        while ((time.time() - start) < timeToSpin and (not rospy.is_shutdown())):
+            self._pubTwist(lin_vel, ang_vel)
+        ## stop Robot
+        self._pubTwist(0,0)
+        return
+
+
+
+    def _pubTwist(self,u,w):
+        """
+        This is the method that publishes twist messages to the robot if you wish to use your own move commands.
+        :param u: Linear Velocity
+        :param w: Angular Velocity
+        :return: the message that is published
+        """
+        twist = Twist()
+        twist.linear.x = u; twist.angular.z = w
+
+        twist.linear.y = 0; twist.linear.z = 0
+        twist.angular.x = 0; twist.angular.y = 0
+
+        self._cmdVelPub.publish(twist)
+        return twist
 
 
 
