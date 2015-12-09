@@ -22,6 +22,7 @@ class rVizPainter():
         self._gridSize = gridSize
         self._name_ = name
         self._painters = {}
+        self._paintNodes = {}
 
 
 
@@ -34,6 +35,7 @@ class rVizPainter():
         :return: None
         """
         self._painters[painterName] = rospy.Publisher(painterName, GridCells, queue_size=1)
+        self._paintNodes[painterName] = None
 
     def paint(self,painterName, paintList):
         """

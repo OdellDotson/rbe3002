@@ -6,9 +6,12 @@ import math
 import tools
 import Queue
 import tf
+import rVizPainter as rvptr
 from nav_msgs.msg import GridCells
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Point
+from turtleExceptions import FrontierException
+
 
 
 class gMap():
@@ -25,6 +28,7 @@ class gMap():
         self._map_list = tf.TransformListener()
         self._goal_pos = None, None
         self._goal_ = None, None, None
+        self.painter = rvptr.rVizPainter(name+" Painter",0.05)
 
         print "gMap has been created"
 
@@ -107,16 +111,18 @@ class gMap():
        """
        :return: Returns a pose on the map in Meters for the robot to drive to
        """
-       frontierList = self.getFrontierList()                            ## Get the list of frontiers that exist on the map
-       mapLocationGridCells = self.pickFrontier(frontierList)           ## Get the map location in grid cells of the frontier to travel to (can expand to have multiple heuristics for this)
+       frontierList = self.getFrontierList()                                               ## Get the list of frontiers that exist on the map
+       mapLocationGridCells = self.pickFrontier(frontierList, self.frontierSize)           ## Get the map location in grid cells of the frontier to travel to (can expand to have multiple heuristics for this)
 
-       return self.mapLocationMeters(mapLocationGridCells)              ## Return the map locaiton in meters so that the pose can just be gone to
+       return self.mapLocationMeters(mapLocationGridCells)                                 ## Return the map locaiton in meters so that the pose can just be gone to
 
     def getFrontierList(self):
        """
        This function finds and creates the list of distinct frontiers and returns it.
        :return: List of Frontiers, each frontier being a list of <(x,y) touples >
+       :return: Raise FrontierException (defined in turtleException file) when there are no more frontiers
        """
+       ## TODO: Read the above function comment to undersatnd what this should be doing.
        result = [[]]
 
        for y,row in enumerate(self._map):
@@ -307,14 +313,6 @@ class gMap():
             pass
         except rospy.ROSInterruptException:
             pass
-
-
-
-
-
-
-
-
 
 
 
