@@ -172,7 +172,7 @@ class gMap():
         return result
 
 
-    def frontierSize(targetFrontier):
+    def frontierSize(self,targetFrontier):
         """
         :param targetFrontier: The frontier, a list of (x,y) points that make up a frontier
 
