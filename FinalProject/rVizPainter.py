@@ -5,6 +5,7 @@ import tools
 from nav_msgs.msg import GridCells
 from geometry_msgs.msg import Point
 from nav_msgs.msg import OccupancyGrid
+from turtleExceptions import PainterException
 
 rospy.Publisher('/not_explored_nodes', GridCells, queue_size=1)
 
@@ -34,10 +35,26 @@ class rVizPainter():
         :param painterName: <string> in 'ROS TOPIC' format. This will error if the topic name is not formatted correctly
         :return: None
         """
-        self._painters[painterName] = rospy.Publisher(painterName, GridCells, queue_size=1)
-        self._paintNodes[painterName] = None
+        if painterName in self._painters:
+            raise PainterException("adding this painter will overwrite the painter that already exists, please use distinct naming")
 
-    def paint(self,painterName, paintList):
+        self._painters[painterName] = rospy.Publisher(painterName, GridCells, queue_size=1)
+        self._paintNodes[painterName] = []
+
+    def addPointtoPaint(self,painterName, point):
+        """
+        Allows the system to store points for painting. All points will be painted by using the 'paint' function.
+        :param painterName: <string> this is the topic that the point will get published oni
+        :param point: <(x,y) touple> in the map space
+        :return:
+        """
+        if not (painterName in self._painters):
+            raise PainterException("The topic you wish to publish to does not exist")
+
+        self._paintNodes[painterName].append(point)
+
+
+    def paint(self,painterName, paintList=[]):
         """
         This function is used to publish to Rviz and actually paint the lists.
         it takes a list of (x,y) touples in the passed map scope. This function will convert the
@@ -47,7 +64,11 @@ class rVizPainter():
         :param paintList:   <LIST[(x,y) touple]> that is the points to be painted.
         :return:
         """
+        if not (painterName in self._painters):
+            raise PainterException("The painter you wish to paint does not exist")
+
         pointList = self._paintListFromTouples(paintList)
+        pointList.extend(self._paintListFromTouples(self._paintNodes[painterName]))
 
         CelltoPublish = GridCells()
         CelltoPublish.header.frame_id = '/map'
