@@ -103,7 +103,7 @@ class gMap():
        """
        :return: Returns a pose on the map in Meters for the robot to drive to
        """
-       frontierList = self.getFrontierList()                            ## Get the list of frontiers that exist on the mpa
+       frontierList = self.getFrontierList()                            ## Get the list of frontiers that exist on the map
        mapLocationGridCells = self.pickFrontier(frontierList)           ## Get the map location in grid cells of the frontier to travel to (can expand to have multiple heuristics for this)
 
        return self.mapLocationMeters(mapLocationGridCells)              ## Return the map locaiton in meters so that the pose can just be gone to
@@ -111,15 +111,66 @@ class gMap():
     def getFrontierList(self):
        """
        This function finds and creates the list of distinct frontiers and stores the center point of the frontier in a node and returns that list.
-       :return: List of Frontiers <(x,y) touple > adskl;fjasdlkfjal;sdfjdskl;
+       :return: List of Frontiers <(x,y) touple >
        """
+       result = [[]]
+
+       for y,row in enumerate(self._map):
+           for x,elt in enumerate(row):
+                # check to see if a given node is adjacent to the opposite kind of node
+                # and check that it isn't in any frontier yet
+                if (self.isFrontierNode(elt) and not elt in result):
+                    frontier = []
+
+                    nodesToExplore = Queue.Queue()
+                    nodesToExplore.put(elt)
+
+
+                    while not nodesToExplore.empty():
+                        frontier.append(nodesToExplore.pop())
+
+
+                # create new frontier (list of nodes) and add this node to it
+                # create queue of frontiers to explore
+
+
+                # check neighbors: is reachable space, adjacent to an unknown space, isn't in the frontier yet
+                    # add to frontier
+                    # add to queue to explore
+                # repeat for next node in the queue until the queue is empty
+
+                # once the frontier is complete add it to the frontier list
+
+                # this gets repeated until all the map has been explored
+
+
+
+
        raise NotImplementedError("getFrontierList not implemented yet")
+
+    def isFrontierNode(self, node):
+        """
+        This returns true if the node provided is both
+            reachable known space
+            has a neighbor that is unknown space
+        :param node:
+        :return:
+        """
+        result = False;
+
+        neighbors = self.getNeighbors(node)
+
+        for elt in neighbors:
+            x, y = elt
+            result |= self._map[y][x] == 1
+
+        return result
 
     def pickFrontier(self, frontierList):
        """
 
-       :param frontierList: List of Frontiers <(x,y) touple > in grid cell location on the mpap
-       :return:an (x,y) touple of the point to go to in grid cell locaitoln on the map
+       :param frontierList: List of Frontiers <(x,y) touple > in grid cell location on the map
+       :return:an (x,y) touple of the point to go to in grid cell location on the map
        """
        raise NotImplementedError("pickFrontier not implemented yet")
 
