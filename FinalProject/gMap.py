@@ -110,8 +110,8 @@ class gMap():
 
     def getFrontierList(self):
        """
-       This function finds and creates the list of distinct frontiers and stores the center point of the frontier in a node and returns that list.
-       :return: List of Frontiers <(x,y) touple >
+       This function finds and creates the list of distinct frontiers and returns it.
+       :return: List of Frontiers, each frontier being a list of <(x,y) touples >
        """
        result = [[]]
 
@@ -166,12 +166,38 @@ class gMap():
 
         return result
 
+
+    def frontierHeuristic(self, targetFrontier):
+        """
+        :param targetFrontier: The frontier, a list of
+
+        :return: a value that corresponds to that specific frontier's heuristic value
+        """
+        pass
+
     def pickFrontier(self, frontierList):
        """
 
-       :param frontierList: List of Frontiers <(x,y) touple > in grid cell location on the map
+       :param frontierList: List of Frontiers , list of list of <(x,y) touple > in grid cell location on the map
        :return:an (x,y) touple of the point to go to in grid cell location on the map
        """
+
+       targetFrontier = frontierList[0];
+
+       if frontierList.len() == 0:#If there are no frontiers
+           raise Exception("Passed in an empty frontier list!")
+
+       elif frontierList.len() != 1:#If we're given more than a single frontier
+           for elt in frontierList:
+               if frontierHeuristic(targetFrontier) < frontierHeuristic(elt):#Check if the next frontier is a better candidate for travel
+                   targetFrontier = elt;
+
+       for elt in targetFrontier:
+            return targetFrontier[int(targetFrontier.len()/2)]
+
+
+       #Do the thing to targetFrontier to get the point
+
        raise NotImplementedError("pickFrontier not implemented yet")
 
     def mapLocationMeters(self, mapLocationGridCells):
