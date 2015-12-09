@@ -1,16 +1,10 @@
 __author__ = 'Troy Hughes'
 
-
+import Queue
 
 import rospy
-import math
-import tools
-import Queue
+from rbe3002.FinalProject import tools
 import tf
-from nav_msgs.msg import GridCells
-from nav_msgs.msg import OccupancyGrid
-from geometry_msgs.msg import Point
-
 
 
 class gMap():

@@ -30,11 +30,15 @@ class gMap():
 
 
     def updateMap(self,msg):
+        """
+        This is the function that is called whenever the "/map" topic is published to
+        :param msg:
+        :return:
+        """
         self._updateMap(msg)
 
 
     def _updateMap(self,msg):
-        print "_updateMap has been called"
         self._map = tools.lMaptoLLMap(msg.data,
                                       msg.info.height,
                                       msg.info.width)
@@ -156,10 +160,11 @@ class gMap():
         :param node:
         :return:
         """
-        result = False;
-
-        neighbors = self.getNeighbors(node)
-
+        result = False
+        try:
+            neighbors = self.getNeighbors(node)
+        except Exception,e:
+            raise Exception("Tucker, the below line of code is going to error, getNeighbor takes x,y, it cannot handle a touple. I think that's what a node is but i'm unsure <3 Troy")
         for elt in neighbors:
             x, y = elt
             result |= self._map[y][x] == 1
@@ -179,7 +184,11 @@ class gMap():
        :param mapLocationGridCells: (x,y) touple of the location in grid cells
        :return:(x,y) touple of the location in meters
        """
-       raise NotImplementedError("mapLocationMeters not implemented yet")
+       gridx,gridy = mapLocationGridCells
+       mapx = tools.degmapifyValue(gridx)
+       mapy = tools.degmapifyValue(gridy)
+
+       return (mapx,mapy)
 
 
 
@@ -209,10 +218,19 @@ class gMap():
         goodNeighbors = []
         for move in gen_neighbors:
             tx, ty = move
-            if ((tx == x) and (ty==y)) or (tx > self._width or x < 0 or y > self._height or y < 0):
+            try:
+                if(self._map[ty][tx] < threshold):
+                    goodNeighbors.append(move)
+            except IndexError:
                 continue
-            if(self._map[ty][tx] < threshold):
-                goodNeighbors.append(move)
+            except Exception,e:
+                print "getNeighbors Error:"
+                raise e
+            """
+                NOTE: The above thing is just querying the map and catching the index out of bounds errors if they happen.
+                This code may not work if the IndexError is the incorrect error, in this case the 'except IndexError' line woudl have
+                to be fixed. The 'except Exception,e' line is used to make sure that the other exceptions are caught
+            """
         return goodNeighbors #State farm joke goes here
 
     def isAtGoalPosition(self, currentLoc):

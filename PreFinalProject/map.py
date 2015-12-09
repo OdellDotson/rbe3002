@@ -1,14 +1,12 @@
 __author__ = 'Odell Dotson'
 
-import rospy
-import math
-import tools
 import Queue
+
+import rospy
+from rbe3002.FinalProject import tools
 import tf
 from nav_msgs.msg import GridCells
 from nav_msgs.msg import OccupancyGrid
-from geometry_msgs.msg import Point
-
 
 
 class map():

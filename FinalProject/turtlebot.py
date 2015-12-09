@@ -44,6 +44,7 @@ class turtlebot():
         self.map = gMap(name+"Map")
         self._name_ = name
 
+        self.frontierX, self.frontierY = None, None
         self._x_offset = None
         self._y_offset = None
         self._x, self._y = 0,0
@@ -73,7 +74,8 @@ class turtlebot():
         #
         # #### Private robot Information
         self._wheelbase = wheelbase
-        self._startupSpinVel = None
+        self._startupSpinVel = 0.5
+        self._moving = False
 
         ## After creation, wait 1 second in order to ensure that your
         self.sleeper = rospy.Duration(1)
@@ -117,14 +119,18 @@ class turtlebot():
             raise NotImplementedError("The result == 2 occured and a response is not implemented")
         elif result == 3:
             print "Robot has arrived at it's destination"
+            self._moving = False
         elif result == 4:
             print "The Robot cannot reach the position you wish to go to, please try again"
+            self._moving = False
+            self._moveError = True
         else:
             raise RuntimeError("A case we did not think of has occured, fuck that.")
 
     """------------------Frontier Functions ---------------"""
     def findFrontier(self):
-        self.nextFrontier = self.map.getNextFrontier()
+        location = self.map.getNextFrontier()
+        self.frontierX, self.frontierY = location
 
     """------------------General Movement------------------"""
     def driveTo(self,x,y,theta):
@@ -149,6 +155,7 @@ class turtlebot():
             raise NotImplementedError("Non-[0,0,0,1] pose's are not implemented")
 
         self._drivePublisher.publish(msg)
+        self._moving = True
 
     def startupSpin(self, timeToSpin):
         """
@@ -158,17 +165,14 @@ class turtlebot():
         :param timeToSpin: <int> the length of time for the robot to spin in a circle
         :return: None
         """
-        u1 = self._startupSpinVel
-        u2 = -self._startupSpinVel
-
-        lin_vel = (0.5)*(u1 + u2)
-        ang_vel = (1/(self._wheelbase))*(u1-u2)
 
         start = time.time()
+        self._moving = True
         while ((time.time() - start) < timeToSpin and (not rospy.is_shutdown())):
-            self._pubTwist(lin_vel, ang_vel)
+            self._pubTwist(0,self._startupSpinVel)
         ## stop Robot
         self._pubTwist(0,0)
+        self._moving = False
         return
 
 
@@ -189,7 +193,8 @@ class turtlebot():
         self._cmdVelPub.publish(twist)
         return twist
 
-
+    def _recover(self):
+        raise NotImplementedError("Recovery mode is not implemented yet")
 
     def run(self):
         while not rospy.is_shutdown():
@@ -199,8 +204,16 @@ class turtlebot():
 
     def main(self):
         try:
-            self._startupSpinVel(30)
-            self.findFrontiers()
+            self._notDoneExploring = False
+            self.startupSpin(30)
+            while self._notDoneExploring and not(rospy.is_shutdown()):
+                self.findFrontier()
+                self.driveTo(self.frontierX,self.frontierY,None)
+                while self._moving and not(rospy.is_shutdown()):
+                    rospy.sleep(0.1)
+                if self._moveError:
+                    self._recover()
+
 
             while not (rospy.is_shutdown()):
                 rospy.sleep(0.1)
