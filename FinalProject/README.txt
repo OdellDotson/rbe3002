@@ -40,4 +40,4 @@ What needs to be done:
             thread is spawned off. This means that we need to make sure that the robot is dealing with these threads and then
             letting them die and then the robot respons to the new information in main loop.
         - There is a possibility that hte robot could miss a frontier beacuse our algorithm is too 'cheep' early. In the case
-            where parts of the map are not filled in we need to be able to catch this somehow. 
+            where parts of the map are not filled in we need to be able to catch this somehow.

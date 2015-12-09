@@ -15,7 +15,7 @@ import math
 # Subclass Information
 # from gMap import gMap
 
-import logging
+from gMap import gMap
 
 #Message Types
 from geometry_msgs.msg import Twist
@@ -41,7 +41,7 @@ class turtlebot():
         ## Loggers and node information
         rospy.init_node(name)
 
-        # self.map = gMap(name+"Map")
+        self.map = gMap(name+"Map")
         self._name_ = name
 
         self._x_offset = None
@@ -122,7 +122,9 @@ class turtlebot():
         else:
             raise RuntimeError("A case we did not think of has occured, fuck that.")
 
-
+    """------------------Frontier Functions ---------------"""
+    def findFrontier(self):
+        self.nextFrontier = self.map.getNextFrontier()
 
     """------------------General Movement------------------"""
     def driveTo(self,x,y,theta):
@@ -197,7 +199,9 @@ class turtlebot():
 
     def main(self):
         try:
-            self.driveTo(2,2,None)
+            self._startupSpinVel(30)
+            self.findFrontiers()
+
             while not (rospy.is_shutdown()):
                 rospy.sleep(0.1)
 

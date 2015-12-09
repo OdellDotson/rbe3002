@@ -99,111 +99,38 @@ class gMap():
         self._currentSet = True
         return True
 
-    def repaint(self):
-        """
-        This method is for repainting on rViz. Defining it as doing nothing to not break turtlebot.py
-        :return:
-        """
-        raise NotImplementedError("Repaint has not been implemented.")
-        return
+    def getNextFrontier(self):
+       """
+       :return: Returns a pose on the map in Meters for the robot to drive to
+       """
+       frontierList = self.getFrontierList()                            ## Get the list of frontiers that exist on the mpa
+       mapLocationGridCells = self.pickFrontier(frontierList)           ## Get the map location in grid cells of the frontier to travel to (can expand to have multiple heuristics for this)
 
-    def getNextWaypoint(self):
-        if self._mapSet is False or self._currentSet is False or self._goalSet is False:
-            print "Mapset:", self._mapSet, "CurrentSet", self._currentSet, "GOALSET", self._goalSet
-            raise RuntimeError("Trying to get waypoints on unset map/location/goal")
-        nodePath = self.getWaypoint()
-        if len(nodePath) >= 2:return nodePath[1]
-        else:return []
+       return self.mapLocationMeters(mapLocationGridCells)              ## Return the map locaiton in meters so that the pose can just be gone to
 
-    def getWaypoint(self):
-        self._updateLocation()
-        start = (self.current_x,self.current_y)
+    def getFrontierList(self):
+       """
+       This function finds and creates the list of distinct frontiers and stores the center point of the frontier in a node and returns that list.
+       :return: List of Frontiers <(x,y) touple > adskl;fjasdlkfjal;sdfjdskl;
+       """
+       raise NotImplementedError("getFrontierList not implemented yet")
 
-        pathToNodify = self.getPath(start) # Get path from A*
-        nodePath = []  # What will become the path of only relevant nodes.
-        prevSlope = 1337.0  # Create an impossible to match previous slope
+    def pickFrontier(self, frontierList):
+       """
 
-        for node in range (0, len(pathToNodify)-1): # For every node in the path created by A*:
-            if pathToNodify[node] != self._goal_pos: # Do not try to calculate a slope for the last node
-                #calculate current slope, from current position to next position.
-                deltax = 1.0*(pathToNodify[node][0]-pathToNodify[node+1][0])#Calcualte delta x based on node and the node ahead
-                deltay = 1.0*(pathToNodify[node][1]-pathToNodify[node+1][1])#calculate delta y
-                currentSlope = deltax/(deltay+0.000001) #So that we don't have devide by 0 errors. Dunno how else to fix
-                if currentSlope != prevSlope: # If we see a slope change
-                    nodePath.append(pathToNodify[node])# Add the new node
-                    prevSlope=currentSlope # Update th slope
+       :param frontierList: List of Frontiers <(x,y) touple > in grid cell location on the mpap
+       :return:an (x,y) touple of the point to go to in grid cell locaitoln on the map
+       """
+       raise NotImplementedError("pickFrontier not implemented yet")
 
-        #Append the very last node, so that we have a complete path.
-        nodePath.append(pathToNodify[len(pathToNodify)-1])
-        return nodePath
+    def mapLocationMeters(self, mapLocationGridCells):
+       """
+       :param mapLocationGridCells: (x,y) touple of the location in grid cells
+       :return:(x,y) touple of the location in meters
+       """
+       raise NotImplementedError("mapLocationMeters not implemented yet")
 
 
-    def getPath(self, start):
-        """
-        This function uses A* to generate a from start to end and then returns it.
-        :param start:
-        :return: list of points (x,y touples) that is the path to take to the goal
-        """
-        came_from = self.aStarSearch(start)          ## Get dictionary from astar
-        path = [self._goal_pos]                      ## Initialize path
-
-        ## Prime the statements for iterating to the end of the path
-        current_location = self._goal_pos
-        prev = came_from[current_location]
-        path.append(prev)
-        current_location = prev
-
-        ## Traverse the tree from leaves to trunk
-        while prev is not None:
-            prev = came_from[current_location]
-            if prev is None:
-                continue
-            path.append(prev)
-            current_location = prev
-        path.reverse()                              ## Reverse the list so it goes from start to finish
-        return path
-
-    def aStarSearch(self, start):
-        """
-        This function generates a dictionary of paths where the shortest path can be found through
-        traversing from the goal back to the start.
-
-        This version of A* uses tools.distFormula as the heuristic. Could be changed out.
-
-        :param start: (x,y) touple of the location in the grid.
-        :return: Dictionary of <end point> : <starting Point> as key,value
-        """
-        frontier = Queue.PriorityQueue()
-        frontier.put((0, start))            ## Put takes a touple of priority, value
-
-        came_from = {}
-        cost_so_far = {}
-
-        came_from[start] = None
-        cost_so_far[start] = 0
-
-        while not frontier.empty():
-            current_touple = frontier.get()                                             ## Returns the (priority, (x,y)
-            _,current = current_touple                                                  ## sets current to (x,y)
-            x,y = current
-
-            if x == self.goalX and y == self.goalY:
-                break                                                       #We're there
-
-            neighbors = self.getNeighbors(x,y) #unpack current
-            for next in neighbors:                                         ## Get list of touples (points)
-                cost_next = cost_so_far[current] + tools.distFormula(current, next)
-                if next not in cost_so_far or cost_so_far[next] > cost_next:
-                    if next not in cost_so_far:
-                        frontier.put((cost_next + tools.distFormula(next, self._goal_pos), next))## Put takes a touple of priority, value
-                        nx,ny = next
-                    cost_so_far[next] = cost_next
-                    came_from[next] = current
-        if frontier.empty():
-            print "Frontier is empty."
-            rospy.sleep(1)
-            raise RuntimeError("A* cannot find the path for some reason")
-        return came_from
 
     def getNeighbors(self,x,y,threshold=99): #TODO Troy has a cleaver way to do this method with try/catches
         """
