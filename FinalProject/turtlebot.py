@@ -48,6 +48,7 @@ class turtlebot():
         self._x_offset = None
         self._y_offset = None
         self._x, self._y = 0,0
+        self._notDoneExploring = False;
 
 
         ## Pub/Sub information
@@ -146,7 +147,7 @@ class turtlebot():
         msg.pose.position.x = x
         msg.pose.position.y = y
 
-        if theta == None:
+        if theta is None:
             msg.pose.orientation.x = 0
             msg.pose.orientation.y = 0
             msg.pose.orientation.z = 0
@@ -220,7 +221,7 @@ class turtlebot():
                 self.driveTo(self.frontierX,self.frontierY,None)
                 while self._moving and not(rospy.is_shutdown()):
                     rospy.sleep(0.1)
-                if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot amke it to.
+                if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
                     self._recover()
 
 

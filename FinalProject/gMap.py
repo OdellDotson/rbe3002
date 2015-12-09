@@ -249,7 +249,7 @@ class gMap():
         for move in gen_neighbors:
             tx, ty = move
             try:
-                if(self._map[ty][tx] < threshold):
+                if self._map[ty][tx] < threshold:
                     goodNeighbors.append(move)
             except IndexError:
                 continue
@@ -258,7 +258,7 @@ class gMap():
                 raise e
             """
                 NOTE: The above thing is just querying the map and catching the index out of bounds errors if they happen.
-                This code may not work if the IndexError is the incorrect error, in this case the 'except IndexError' line woudl have
+                This code may not work if the IndexError is the incorrect error, in this case the 'except IndexError' line would have
                 to be fixed. The 'except Exception,e' line is used to make sure that the other exceptions are caught
             """
         return goodNeighbors #State farm joke goes here
