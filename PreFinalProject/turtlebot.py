@@ -5,25 +5,21 @@ __author__ = 'Troy Hughes'
 
 # Simple Imports
 import time
+import math
 
 import rospy
 import tf
-import tools
-import math
+from rbe3002.FinalProject import tools
 
 
 # Subclass Information
 from communicator import communicator
-from map import map
 from gMap import gMap
 from localMap import localMap
 
-import logging
-
 #Message Types
 from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry, GridCells, OccupancyGrid
-from map_msgs.msg import OccupancyGridUpdate
+from nav_msgs.msg import Odometry, OccupancyGrid
 from geometry_msgs.msg import PoseStamped
 
 class turtlebot(communicator):
@@ -94,7 +90,7 @@ class turtlebot(communicator):
         # goalY = tools.mapifyValue(msg.pose.position.y)
         goalX = tools.gmapifyValue(msg.pose.position.x)
         goalY = tools.gmapifyValue(msg.pose.position.y)
-        goaltheta=tools.normalizeTheta((msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w))
+        goaltheta= tools.normalizeTheta((msg.pose.orientation.x,msg.pose.orientation.y,msg.pose.orientation.z,msg.pose.orientation.w))
 
         self._goal_,self._current_ = self.map.storeGoal(goalX,goalY,goaltheta)
 
