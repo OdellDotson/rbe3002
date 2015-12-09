@@ -172,30 +172,35 @@ class gMap():
         return result
 
 
-    def frontierHeuristic(self, targetFrontier):
+    def frontierSize(targetFrontier):
         """
-        :param targetFrontier: The frontier, a list of
+        :param targetFrontier: The frontier, a list of (x,y) points that make up a frontier
 
-        :return: a value that corresponds to that specific frontier's heuristic value
+        :return: <int> representing the number of 'points' in the frontier
         """
-        return targetFrontier.len()
+        return len(targetFrontier)
         #TODO: Currently this just picks whichever point in the frontier is closest and goes there. Maybe not the best?
 
-    def pickFrontier(self, frontierList):
+    def pickFrontier(self, frontierList, heuristic):
         """
         :param frontierList: List of Frontiers , list of list of <(x,y) touple > in grid cell location on the map
+        :param heuristic: function that only requires a single frontier to make a decision.
         :return:an (x,y) touple of the point to go to in grid cell location on the map
         """
         targetFrontier = frontierList[0]
 
-        if frontierList.len() == 0:#If there are no frontiers
+        if len(frontierList) == 0:#If there are no frontiers
             raise Exception("Passed in an empty frontier list!")
 
-        elif frontierList.len() != 1:#If we're given more than a single frontier
+
+
+        ## Select the largest frontie
+        elif len(frontierList) != 1:
             for elt in frontierList:
-                if frontierHeuristic(targetFrontier) < frontierHeuristic(elt):#Check if the next frontier is a better candidate for travel
+                if heuristic(targetFrontier) < heuristic(elt):#Check if the next frontier is a better candidate for travel
                     targetFrontier = elt
 
+        ## Find the closest point on the frontier
         currentTarget = targetFrontier[0]
         for elt in targetFrontier:
             if tools.distFormula(elt, (self.current_x, self.current_y)) < tools.distFormula(currentTarget, (self.current_x, self.current_y)):
