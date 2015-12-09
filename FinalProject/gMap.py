@@ -178,32 +178,31 @@ class gMap():
 
         :return: a value that corresponds to that specific frontier's heuristic value
         """
-        pass
+        return targetFrontier.len()
+        #TODO: Currently this just picks whichever point in the frontier is closest and goes there. Maybe not the best?
 
     def pickFrontier(self, frontierList):
-       """
+        """
+        :param frontierList: List of Frontiers , list of list of <(x,y) touple > in grid cell location on the map
+        :return:an (x,y) touple of the point to go to in grid cell location on the map
+        """
+        targetFrontier = frontierList[0]
 
-       :param frontierList: List of Frontiers , list of list of <(x,y) touple > in grid cell location on the map
-       :return:an (x,y) touple of the point to go to in grid cell location on the map
-       """
+        if frontierList.len() == 0:#If there are no frontiers
+            raise Exception("Passed in an empty frontier list!")
 
-       targetFrontier = frontierList[0];
+        elif frontierList.len() != 1:#If we're given more than a single frontier
+            for elt in frontierList:
+                if frontierHeuristic(targetFrontier) < frontierHeuristic(elt):#Check if the next frontier is a better candidate for travel
+                    targetFrontier = elt
 
-       if frontierList.len() == 0:#If there are no frontiers
-           raise Exception("Passed in an empty frontier list!")
+        currentTarget = targetFrontier[0]
+        for elt in targetFrontier:
+            if tools.distFormula(elt, (self.current_x, self.current_y)) < tools.distFormula(currentTarget, (self.current_x, self.current_y)):
+                currentTarget = elt
+                #TODO: Currently this just picks whichever point in the frontier is closest and goes there. Maybe not the best?
+        return currentTarget
 
-       elif frontierList.len() != 1:#If we're given more than a single frontier
-           for elt in frontierList:
-               if frontierHeuristic(targetFrontier) < frontierHeuristic(elt):#Check if the next frontier is a better candidate for travel
-                   targetFrontier = elt;
-
-       for elt in targetFrontier:
-            return targetFrontier[int(targetFrontier.len()/2)]
-
-
-       #Do the thing to targetFrontier to get the point
-
-       raise NotImplementedError("pickFrontier not implemented yet")
 
     def mapLocationMeters(self, mapLocationGridCells):
        """
