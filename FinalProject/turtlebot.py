@@ -194,13 +194,22 @@ class turtlebot():
         return twist
 
     def _recover(self):
-        raise NotImplementedError("Recovery mode is not implemented yet")
+        """
+        This is the recovery mode for the robot. This function will handle when there is a move error.
 
-    def run(self):
-        while not rospy.is_shutdown():
-            rospy.sleep(0.1)
-            print "tick"
-            continue
+        This function should ensure that there are frontiers that can be found, and then move forward.
+
+        :return:
+        """
+        self.startupSpin(30)
+        try:
+            self.findFrontier()
+            self._moveError = False
+        except Exception,e:
+            print "You got an exception"
+            print e
+        return
+
 
     def main(self):
         try:
@@ -211,7 +220,7 @@ class turtlebot():
                 self.driveTo(self.frontierX,self.frontierY,None)
                 while self._moving and not(rospy.is_shutdown()):
                     rospy.sleep(0.1)
-                if self._moveError:
+                if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot amke it to.
                     self._recover()
 
 
