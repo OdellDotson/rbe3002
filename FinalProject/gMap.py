@@ -27,11 +27,13 @@ class gMap():
         self._goal_pos = None, None
         self._goal_ = None, None, None
         self.painter = rvptr.rVizPainter(name + " Painter", 0.05)
+        self.painter.addPainter('/testSquares')
+
 
         print "gMap has been created"
 
     def doneSetup(self):
-        if self.current_x is None or self.current_y is None or self.current_theta is None:
+        if self.current_x is None or self.current_y is None or self.current_theta is None or self._map == [[]]:
             self._updateLocation()
             return False
         else:
@@ -154,7 +156,7 @@ class gMap():
             for x, elt in enumerate(row):
                 # check to see if a given node is adjacent to the opposite kind of node
                 # and check that it isn't in any frontier yet
-                isAlreadyFound = False;
+                isAlreadyFound = False
 
                 for list in result:
                     if (x, y) in list:
@@ -233,10 +235,14 @@ class gMap():
         :return:(x,y) touple of the location in meters
         """
         gridx, gridy = mapLocationGridCells
-        mapx = tools.degmapifyValue(gridx)
-        mapy = tools.degmapifyValue(gridy)
 
-        return (mapx, mapy)
+        midx = tools.degmapifyValue(float(gridx)+float(self.current_x))/2.0
+        midy = tools.degmapifyValue(float(gridy)+float(self.current_y))/2.0
+
+        # mapx = tools.degmapifyValue(midx)
+        # mapy = tools.degmapifyValue(midy)
+        print "The location you're about to go to is", gridx,gridy,"on the grid and",midx,midy,'on the map'
+        return (midx, midy)
 
 
 
@@ -269,11 +275,11 @@ class gMap():
         :return:
         """
 
-        if (givenMap[y][x] == 1):
+        if (givenMap[y][x] > -1 and givenMap[y][x] < 50):
             neighbors = self.getNeighbors(x, y, givenMap)
 
             for n in neighbors:
-                x, y = n;
+                x, y = n
                 if (givenMap[y][x] == -1):
                     return True
 

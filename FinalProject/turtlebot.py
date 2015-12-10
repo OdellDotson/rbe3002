@@ -4,6 +4,7 @@ __author__ = 'Troy Hughes'
 
 # Simple Imports
 import time
+import tools
 import rospy
 import tf
 # import tools
@@ -122,8 +123,8 @@ class turtlebot():
 
     """------------------Frontier Functions ---------------"""
 
-    def findFrontier(self):
-        location = self.map.getNextFrontier()
+    def findFrontier(self, verbose = False):
+        location = self.map.getNextFrontier(verbose)
         self.frontierX, self.frontierY = location
 
     """------------------General Movement------------------"""
@@ -159,7 +160,7 @@ class turtlebot():
         self._drivePublisher.publish(msg)
         self._moving = True
 
-    def startupSpin(self, numSpins):
+    def startupSpin(self):
         """
         This will be the method that causes the robot to spin about it's axis for 'timeToSpin' seconds. this will
         stop the robot when it is done spinning for timeToSpin seconds.
@@ -171,7 +172,10 @@ class turtlebot():
         # orthoSpins = [math.pi/2, math.pi, -math.pi/2, -math.pi, 0]
         for i,angle in enumerate([math.pi/2,-math.pi/2]):
 
-            self.driveTo(self.map.current_x,self.map.current_y,angle)
+            self.driveTo(tools.degmapifyValue(self.map.current_x),
+                         tools.degmapifyValue(self.map.current_y),
+                         angle)
+
             while self._moving and not self._moveError and not (rospy.is_shutdown()):
                 rospy.sleep(0.1)
             if self._moveError:
@@ -253,10 +257,21 @@ class turtlebot():
         try:
 
             self._notDoneExploring = True
-            self.startupSpin(45)
+            self.startupSpin()
             print "This map is difficult, let me think..."
             rospy.sleep(15)
             print "Ok, I think I'm ready to try and drive somewhere."
+            self.findFrontier(verbose = False)
+            self.driveTo(self.frontierX,self.frontierY,None)
+            while self._moving and not(rospy.is_shutdown()):
+                rospy.sleep(0.1)
+                if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
+                    print "Your frontier location is: ", self.frontierX, self.frontierY,\
+                        "You are currently at: ",tools.degmapifyValue(self.map.current_x), tools.degmapifyValue(self.map.current_y)
+
+
+                    raise TurtlebotException("I'm in recovery mode! Halp me!")
+
 
             # while self._notDoneExploring and not (rospy.is_shutdown()):
             #     self.findFrontier()

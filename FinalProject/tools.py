@@ -162,16 +162,16 @@ def lMaptoLLMap(lMap, height, width):
         map.append(new_list)
     return map
 
-def mapifyValue(value):
-    return int(round(value/cell))
-
-
-def demapifyValue(value):
-    return value*cell
+# def mapifyValue(value):
+#     return int(round(value/cell))
+#
+#
+# def demapifyValue(value):
+#     return value*cell
 
 def gmapifyValue(value):
     return int(round(value/0.05))
 
 def degmapifyValue(value):
-    return int(round(value*0.05))
+    return round(value*0.05)
 
