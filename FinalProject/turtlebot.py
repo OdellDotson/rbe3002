@@ -214,15 +214,15 @@ class turtlebot():
 
     def main(self):
         try:
-            self._notDoneExploring = False
+            self._notDoneExploring = True
             self.startupSpin(30)
             while self._notDoneExploring and not(rospy.is_shutdown()):
                 self.findFrontier()
-                self.driveTo(self.frontierX,self.frontierY,None)
-                while self._moving and not(rospy.is_shutdown()):
-                    rospy.sleep(0.1)
-                if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
-                    self._recover()
+                # self.driveTo(self.frontierX,self.frontierY,None)
+                # while self._moving and not(rospy.is_shutdown()):
+                    # rospy.sleep(0.1)
+                # if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
+                   # self._recover()
 
 
             while not (rospy.is_shutdown()):
