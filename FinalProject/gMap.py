@@ -100,7 +100,7 @@ class gMap():
         self._currentSet = True
         return True
 
-    def getNextFrontier(self):
+    def getNextFrontier(self, givenMap):
         """
         :return: Returns a pose on the map in Meters for the robot to drive to
         """
@@ -108,7 +108,17 @@ class gMap():
         print "Trying to find a new Frontier"
 
         ## Get the list of frontiers that exist on the map
-        frontierList = self.getFrontierList
+        frontierList = self.getFrontierList(givenMap)
+
+        print ""
+        print "Fontiers found: "
+        for n in frontierList:
+            print ""
+            print n
+
+
+        print ""
+
 
         ## Get the map location in grid cells of the frontier to travel to (can expand to have multiple heuristics for this)
         mapLocationGridCells = self.pickFrontier(frontierList, self.frontierSize)
@@ -116,33 +126,39 @@ class gMap():
         ## Return the map locaiton in meters so that the pose can just be gone to
         return self.mapLocationMeters(mapLocationGridCells)
 
-    @property
-    def getFrontierList(self):
+    def getFrontierList(self, givenMap):
         """
         This function finds and creates the list of distinct frontiers and returns it.
         :return: List of Frontiers, each frontier being a list of <(x,y) touples >
         :return: Raise FrontierException (defined in turtleException file) when there are no more frontiers
         """
 
-        result = [[]]
+        result = []
 
-        for y, row in enumerate(self._map):
+        for y, row in enumerate(givenMap):
             for x, elt in enumerate(row):
                 # check to see if a given node is adjacent to the opposite kind of node
                 # and check that it isn't in any frontier yet
-                if (self.isNodeFrontier(x, y) and not elt in result):
+                isAlreadyFound = False;
+
+                for list in result:
+                    if (x, y) in list:
+                        isAlreadyFound = True
+
+
+                if (self.isNodeFrontier(x, y, givenMap) and not isAlreadyFound):
                     frontier = []
 
-                    nodesToExplore = Queue.Queue()
-                    nodesToExplore.put(elt)
+                    nodesToExplore = []
+                    nodesToExplore.append((x,y))
 
-                    while not nodesToExplore.empty():
+                    while nodesToExplore.__len__() > 0:
                         currentNode = nodesToExplore.pop()
                         frontier.append(currentNode)
 
-                        for n in self.getNeighborsFrontier(currentNode[0], currentNode[1]):
-                            if not n in frontier:
-                                nodesToExplore.put(n)
+                        for n in self.getNeighborsFrontier(currentNode[0], currentNode[1], givenMap):
+                            if not n in frontier and not n in nodesToExplore:
+                                nodesToExplore.append(n)
 
                     result.append(frontier)
 
@@ -186,8 +202,9 @@ class gMap():
         ## Find the closest point on the frontier
         currentTarget = targetFrontier[0]
         for elt in targetFrontier:
-            if tools.distFormula(elt, (self.current_x, self.current_y)) < tools.distFormula(currentTarget, (
-                    self.current_x, self.current_y)):
+            # TODO: replace once frontier testing is done
+            # if tools.distFormula(elt, (self.current_x, self.current_y)) < tools.distFormula(currentTarget, (
+            if tools.distFormula(elt, (0, 0)) < tools.distFormula(currentTarget, (0, 0)):
                 currentTarget = elt
                 # TODO: Currently this just picks whichever point in the frontier is closest and goes there. Maybe not the best?
 
@@ -206,7 +223,7 @@ class gMap():
 
         return (mapx, mapy)
 
-    def getNeighbors(self, x, y, threshold=99):  # TODO Troy has a cleaver way to do this method with try/catches
+    def getNeighbors(self, x, y, givenMap, threshold=99):  # TODO Troy has a cleaver way to do this method with try/catches
         """
         This get's the neighbors of a specific point on the map. This function preemptively removes squares with
         values greater than the threshold. This allows us to remove walls and dangerous zones from the path planning
@@ -217,7 +234,11 @@ class gMap():
         :return: None
         """
 
-        if (y > self._width or x < 0 or y > self._height or y < 0):
+        height = givenMap[0].__len__()
+        width = givenMap.__len__()
+
+        if (y > width or x < 0 or y > height or y < 0):
+            return {}
             print (x, y)
             raise ReferenceError("getNeighbors out of bound error on x or y coordinate.")
         # Goes through the values, ignores self
@@ -233,7 +254,7 @@ class gMap():
         for move in gen_neighbors:
             tx, ty = move
             try:
-                if self._map[ty][tx] < threshold:
+                if givenMap[ty][tx] < threshold:
                     goodNeighbors.append(move)
             except IndexError:
                 continue
@@ -247,26 +268,26 @@ class gMap():
             """
         return goodNeighbors  # State farm joke goes here
 
-    def getNeighborsFrontier(self, x, y):
+    def getNeighborsFrontier(self, x, y, givenMap):
         """
         Returns all the neighbors of a given node that are frontier nodes
         :param x:
         :param y:
         :return:
         """
-        goodNeigbhors = self.getNeighbors(x, y)
+        goodNeigbhors = self.getNeighbors(x, y, givenMap)
 
         edgeNeighbors = []
 
         for n in goodNeigbhors:
             nodeX, nodeY = n
 
-            if self.isNodeFrontier(nodeX, nodeY):
+            if self.isNodeFrontier(nodeX, nodeY, givenMap):
                 edgeNeighbors.append(n)
 
         return edgeNeighbors
 
-    def isNodeFrontier(self, x, y):
+    def isNodeFrontier(self, x, y, givenMap):
         """
         Returns true if the given coordinate specific a node that:
             Is known reachable space
@@ -276,12 +297,12 @@ class gMap():
         :return:
         """
 
-        if (self._map[y][x] == 1):
-            neighbors = self.getNeighbors(x, y)
+        if (givenMap[y][x] == 1):
+            neighbors = self.getNeighbors(x, y, givenMap)
 
             for n in neighbors:
                 x, y = n;
-                if (self._map[y][x]):
+                if (givenMap[y][x] == -1):
                     return True
 
         return False
@@ -320,6 +341,9 @@ class gMap():
 
     def getRobotAngle(self):
         return self.current_theta
+
+    def replaceMap(self, newMap):
+        self._map = newMap
 
     def main(self):
         try:

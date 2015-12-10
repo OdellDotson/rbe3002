@@ -1,23 +1,18 @@
 __author__ = 'Troy Hughes'
 
-
 ##Imports
 
 # Simple Imports
 import time
-
 import rospy
 import tf
 # import tools
 import math
-
-
 # Subclass Information
 # from gMap import gMap
 
 from gMap import gMap
-
-#Message Types
+# Message Types
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry, GridCells, OccupancyGrid
 from map_msgs.msg import OccupancyGridUpdate
@@ -32,7 +27,6 @@ class turtlebot():
         :return: None
         """
 
-
         """ SETUP::
             1) will instantiate the base logging class and start the node
             2) sets up all the publishers and subscribers
@@ -41,21 +35,21 @@ class turtlebot():
         ## Loggers and node information
         rospy.init_node(name)
 
-        self.map = gMap(name+"Map")
+        self.map = gMap(name + "Map")
         self._name_ = name
 
         self.frontierX, self.frontierY = None, None
         self._x_offset = None
         self._y_offset = None
-        self._x, self._y = 0,0
+        self._x, self._y = 0, 0
         self._notDoneExploring = False;
-
 
         ## Pub/Sub information
         self._drivePublisher = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
         self._cmdVelPub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=1)
 
-        self._baseResultSubscriber = rospy.Subscriber('/move_base/result',MoveBaseActionResult,self._storeMoveBaseResult, queue_size=1)
+        self._baseResultSubscriber = rospy.Subscriber('/move_base/result', MoveBaseActionResult,
+                                                      self._storeMoveBaseResult, queue_size=1)
 
         # self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
         # self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
@@ -86,31 +80,25 @@ class turtlebot():
         print "Robot Created"
         print '\n\n'
 
-
-    def storeGoal(self,msg):
+    def storeGoal(self, msg):
         raise NotImplementedError("Final Project version of 'storeGoal' not implemented yet")
-
 
     def storeCostmap(self, msg):
         raise NotImplementedError("Final Project version of 'storeCostmap' not implemetned yet")
 
-
     def _updateMap(self, msg):
         raise NotImplementedError("Final Project version of '_updateMap' not implemented yet")
-
 
     def odomCallback(self, msg):
         raise NotImplementedError("Final project version of 'odomCallback' not implemented yet")
 
-
-
-
     """------------------Result Functions------------------"""
+
     def _storeMoveBaseResult(self, msg):
         result = msg.status.status
-        self._nextAction(result,msg)
+        self._nextAction(result, msg)
 
-    def _nextAction(self, result,msg):
+    def _nextAction(self, result, msg):
         if result == 0:
             print msg
             raise NotImplementedError("The Result == 0 occured and a response is not implimented")
@@ -129,12 +117,14 @@ class turtlebot():
             raise RuntimeError("A case we did not think of has occured, fuck that.")
 
     """------------------Frontier Functions ---------------"""
+
     def findFrontier(self):
         location = self.map.getNextFrontier()
         self.frontierX, self.frontierY = location
 
     """------------------General Movement------------------"""
-    def driveTo(self,x,y,theta):
+
+    def driveTo(self, x, y, theta):
         """
         This will publish a PoseStampped message to tell the robot to move to the x,y,theta position on the map
         :param x:
@@ -170,15 +160,13 @@ class turtlebot():
         start = time.time()
         self._moving = True
         while ((time.time() - start) < timeToSpin and (not rospy.is_shutdown())):
-            self._pubTwist(0,self._startupSpinVel)
+            self._pubTwist(0, self._startupSpinVel)
         ## stop Robot
-        self._pubTwist(0,0)
+        self._pubTwist(0, 0)
         self._moving = False
         return
 
-
-
-    def _pubTwist(self,u,w):
+    def _pubTwist(self, u, w):
         """
         This is the method that publishes twist messages to the robot if you wish to use your own move commands.
         :param u: Linear Velocity
@@ -186,10 +174,13 @@ class turtlebot():
         :return: the message that is published
         """
         twist = Twist()
-        twist.linear.x = u; twist.angular.z = w
+        twist.linear.x = u;
+        twist.angular.z = w
 
-        twist.linear.y = 0; twist.linear.z = 0
-        twist.angular.x = 0; twist.angular.y = 0
+        twist.linear.y = 0;
+        twist.linear.z = 0
+        twist.angular.x = 0;
+        twist.angular.y = 0
 
         self._cmdVelPub.publish(twist)
         return twist
@@ -206,33 +197,59 @@ class turtlebot():
         try:
             self.findFrontier()
             self._moveError = False
-        except Exception,e:
+        except Exception, e:
             print "You got an exception"
             print e
         return
 
-
     def main(self):
+
         try:
             self._notDoneExploring = True
-            self.startupSpin(30)
-            while self._notDoneExploring and not(rospy.is_shutdown()):
-                self.findFrontier()
-                # self.driveTo(self.frontierX,self.frontierY,None)
-                # while self._moving and not(rospy.is_shutdown()):
-                    # rospy.sleep(0.1)
-                # if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
-                   # self._recover()
+            # self.startupSpin(30)
+            tempMap = [
+                [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1],
+                [-1, -1, 100, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1],
+                [-1, -1, 100, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, -1, -1, -1],
+                [-1, -1, 100, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1],
+                [-1, -1, 100, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1]
+            ]
+
+            self.map.getNextFrontier(tempMap)
+
+            print ""
+            print "Finished!"
+            print ""
+
+            # while self._notDoneExploring and not (rospy.is_shutdown()):
+            # self.findFrontier()
+            # self.driveTo(self.frontierX,self.frontierY,None)
+            # while self._moving and not(rospy.is_shutdown()):
+            # rospy.sleep(0.1)
+            # if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
+            # self._recover()
 
 
-            while not (rospy.is_shutdown()):
-                rospy.sleep(0.1)
+            # while not (rospy.is_shutdown()):
+            # rospy.sleep(0.1)
 
         except rospy.ROSInterruptException:
             pass
 
 
-
 Turtle = turtlebot("DeezNuts")
 Turtle.main()
-
