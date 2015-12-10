@@ -99,8 +99,12 @@ class gMap():
         self._currentSet = True
         self._currentSet = True
         return True
+    def overrideMap(self,newMap):
+        self._map = newMap
+        print "Map Overidden"
 
-    def getNextFrontier(self, givenMap):
+
+    def getNextFrontier(self):
         """
         :return: Returns a pose on the map in Meters for the robot to drive to
         """
@@ -108,7 +112,7 @@ class gMap():
         print "Trying to find a new Frontier"
 
         ## Get the list of frontiers that exist on the map
-        frontierList = self.getFrontierList(givenMap)
+        frontierList = self.getFrontierList(self._map)
 
         print ""
         print "Fontiers found: "
@@ -126,7 +130,7 @@ class gMap():
         ## Return the map locaiton in meters so that the pose can just be gone to
         return self.mapLocationMeters(mapLocationGridCells)
 
-    def getFrontierList(self, givenMap):
+    def getFrontierList(self,givenMap):
         """
         This function finds and creates the list of distinct frontiers and returns it.
         :return: List of Frontiers, each frontier being a list of <(x,y) touples >
