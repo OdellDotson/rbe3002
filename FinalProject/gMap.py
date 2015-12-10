@@ -30,6 +30,13 @@ class gMap():
 
         print "gMap has been created"
 
+    def doneSetup(self):
+        if self.current_x is None or self.current_y is None or self.current_theta is None:
+            self._updateLocation()
+            return False
+        else:
+            return True
+
     def updateMap(self, msg):
         """
         This is the function that is called whenever the "/map" topic is published to
@@ -98,6 +105,7 @@ class gMap():
         self.current_z = tools.gmapifyValue(z)
         self._currentSet = True
         self._currentSet = True
+        print "Location values are: ",self.current_x,self.current_y,self.current_theta
         return True
     def overrideMap(self,newMap):
         self._map = newMap

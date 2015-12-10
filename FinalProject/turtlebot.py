@@ -51,6 +51,7 @@ class turtlebot():
 
         self._baseResultSubscriber = rospy.Subscriber('/move_base/result', MoveBaseActionResult,
                                                       self._storeMoveBaseResult, queue_size=1)
+        self._mapSubscriber = rospy.Subscriber('/map',OccupancyGrid, self._updateMap, queue_size=1)
 
         # self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
         # self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
@@ -71,6 +72,7 @@ class turtlebot():
         # #### Private robot Information
         self._wheelbase = wheelbase
         self._startupSpinVel = 0.5
+        self._moveError = False
         self._moving = False
 
         ## After creation, wait 1 second in order to ensure that your
@@ -88,7 +90,8 @@ class turtlebot():
         raise NotImplementedError("Final Project version of 'storeCostmap' not implemetned yet")
 
     def _updateMap(self, msg):
-        raise NotImplementedError("Final Project version of '_updateMap' not implemented yet")
+        print "Map received"
+        self.map.updateMap(msg)
 
     def odomCallback(self, msg):
         raise NotImplementedError("Final project version of 'odomCallback' not implemented yet")
@@ -141,8 +144,12 @@ class turtlebot():
         if theta is None:
             quat = (0,0,0,1)
         else:
-            rpy = (0,0,theta)
-            quat = tf.transformations.quaternion_from_euler(rpy)
+            try:
+                quat = tf.transformations.quaternion_from_euler(0.0,0.0,float(theta))
+            except Exception,e:
+                print "Theta is: ",theta
+                raise e
+
         qx,qy,qz,qw = quat
         msg.pose.orientation.x = qx
         msg.pose.orientation.y = qy
@@ -160,13 +167,26 @@ class turtlebot():
         :param timeToSpin: <int> the length of time for the robot to spin in a circle
         :return: None
         """
-        orthoSpins = [math.pi/2, math.pi, -math.pi/2, -math.pi, 0]
-        for angle in orthoSpins:
-            self.driveTo(self,self.map.current_x,self.map.current_y,orthoSpins)
+        print "Starting startup spin "
+        # orthoSpins = [math.pi/2, math.pi, -math.pi/2, -math.pi, 0]
+        for i,angle in enumerate([math.pi/2,-math.pi/2]):
+
+            self.driveTo(self.map.current_x,self.map.current_y,angle)
             while self._moving and not self._moveError and not (rospy.is_shutdown()):
                 rospy.sleep(0.1)
             if self._moveError:
-                raise TurtlebotException("Failed to spin in a circle")
+                print "Caught move error in startupSpin"
+                self._moveError = False
+            self._moveing = False
+
+        self.driveTo(self.map.current_x,self.map.current_y,None)
+        while self._moving and not self._moveError and not (rospy.is_shutdown()):
+                rospy.sleep(0.1)
+        if self._moveError:
+            print "Failed to return to home spot, but it's cool"
+            self._moveError = False
+        self.moving = False
+
 
 
 
@@ -226,7 +246,12 @@ class turtlebot():
 
     def main(self):
         print "Starting Main"
+        while not self.map.doneSetup() and not (rospy.is_shutdown()):
+            rospy.sleep(0.1)
+        print "System is prepaired to start running"
+
         try:
+
             self._notDoneExploring = True
             self.startupSpin(45)
             print "This map is difficult, let me think..."
