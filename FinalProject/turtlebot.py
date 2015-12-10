@@ -18,6 +18,7 @@ from nav_msgs.msg import Odometry, GridCells, OccupancyGrid
 from map_msgs.msg import OccupancyGridUpdate
 from geometry_msgs.msg import PoseStamped
 from move_base_msgs.msg import MoveBaseActionResult
+from turtleExceptions import TurtlebotException
 
 
 class turtlebot():
@@ -138,17 +139,20 @@ class turtlebot():
         msg.pose.position.y = y
 
         if theta is None:
-            msg.pose.orientation.x = 0
-            msg.pose.orientation.y = 0
-            msg.pose.orientation.z = 0
-            msg.pose.orientation.w = 1
+            quat = (0,0,0,1)
         else:
-            raise NotImplementedError("Non-[0,0,0,1] pose's are not implemented")
+            rpy = (0,0,theta)
+            quat = tf.transformations.quaternion_from_euler(rpy)
+        qx,qy,qz,qw = quat
+        msg.pose.orientation.x = qx
+        msg.pose.orientation.y = qy
+        msg.pose.orientation.z = qz
+        msg.pose.orientation.w = qw
 
         self._drivePublisher.publish(msg)
         self._moving = True
 
-    def startupSpin(self, timeToSpin):
+    def startupSpin(self, numSpins):
         """
         This will be the method that causes the robot to spin about it's axis for 'timeToSpin' seconds. this will
         stop the robot when it is done spinning for timeToSpin seconds.
@@ -156,34 +160,17 @@ class turtlebot():
         :param timeToSpin: <int> the length of time for the robot to spin in a circle
         :return: None
         """
+        orthoSpins = [math.pi/2, math.pi, -math.pi/2, -math.pi, 0]
+        for angle in orthoSpins:
+            self.driveTo(self,self.map.current_x,self.map.current_y,orthoSpins)
+            while self._moving and not self._moveError and not (rospy.is_shutdown()):
+                rospy.sleep(0.1)
+            if self._moveError:
+                raise TurtlebotException("Failed to spin in a circle")
 
-        start = time.time()
-        self._moving = True
-        while ((time.time() - start) < timeToSpin and (not rospy.is_shutdown())):
-            self._pubTwist(0, self._startupSpinVel)
-        ## stop Robot
-        self._pubTwist(0, 0)
-        self._moving = False
-        return
 
-    def _pubTwist(self, u, w):
-        """
-        This is the method that publishes twist messages to the robot if you wish to use your own move commands.
-        :param u: Linear Velocity
-        :param w: Angular Velocity
-        :return: the message that is published
-        """
-        twist = Twist()
-        twist.linear.x = u;
-        twist.angular.z = w
 
-        twist.linear.y = 0;
-        twist.linear.z = 0
-        twist.angular.x = 0;
-        twist.angular.y = 0
 
-        self._cmdVelPub.publish(twist)
-        return twist
 
     def _recover(self):
         """
@@ -245,12 +232,7 @@ class turtlebot():
             print "This map is difficult, let me think..."
             rospy.sleep(15)
             print "Ok, I think I'm ready to try and drive somewhere."
-            self.findFrontier()
-            self.driveTo(self.frontierX,self.frontierY,None)
-            while self._moving and not(rospy.is_shutdown()):
-                    rospy.sleep(0.1)
-                    if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
-                        print "Recovery Mode!!! Help!!!"
+
             # while self._notDoneExploring and not (rospy.is_shutdown()):
             #     self.findFrontier()
             #     self.driveTo(self.frontierX,self.frontierY,None)

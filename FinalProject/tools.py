@@ -24,7 +24,7 @@ def distFormula(point1, point2):
     return math.sqrt((x1-x2)**2 + (y1-y2)**2)
 
 """
-    euler_from_quaternion to spin in a circle. 
+    euler_from_quaternion to spin in a circle.
 """
 def normalizeTheta(quaternian_touple):
     """
