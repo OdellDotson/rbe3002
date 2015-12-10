@@ -238,25 +238,33 @@ class turtlebot():
 
 
     def main(self):
-
+        print "Starting Main"
         try:
             self._notDoneExploring = True
-            self.startupSpin(30)
-
-            while self._notDoneExploring and not (rospy.is_shutdown()):
-                self.findFrontier()
-                self.driveTo(self.frontierX,self.frontierY,None)
-                while self._moving and not(rospy.is_shutdown()):
+            self.startupSpin(45)
+            print "This map is difficult, let me think..."
+            rospy.sleep(15)
+            print "Ok, I think I'm ready to try and drive somewhere."
+            self.findFrontier()
+            self.driveTo(self.frontierX,self.frontierY,None)
+            while self._moving and not(rospy.is_shutdown()):
                     rospy.sleep(0.1)
                     if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
-                        self._recover()
-
-
-            print "Frontiers Explored,"
+                        print "Recovery Mode!!! Help!!!"
+            # while self._notDoneExploring and not (rospy.is_shutdown()):
+            #     self.findFrontier()
+            #     self.driveTo(self.frontierX,self.frontierY,None)
+            #     while self._moving and not(rospy.is_shutdown()):
+            #         rospy.sleep(0.1)
+            #         if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
+            #             self._recover()
+            #
+            #
+            # print "Frontiers Explored,"
 
         except rospy.ROSInterruptException:
             pass
-
+        print "Terminating"
 
 Turtle = turtlebot("DeezNuts")
-Turtle.test()
+Turtle.main()
