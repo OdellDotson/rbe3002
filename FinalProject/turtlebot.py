@@ -25,21 +25,26 @@ class turtlebot():
     def __init__(self, name, wheelbase=0.352):
         """
         :param name: <string> that will be the 'name'.log file and the name of the node created
+        :param wheelbase: <float> that will be the width of the robot
         :return: None
         """
 
         """ SETUP::
-            1) will instantiate the base logging class and start the node
-            2) sets up all the publishers and subscribers
-            3) ...
+            1) Will initialize ROS node under name passed
+            2) Will initialize subclass information
+            3) Will initialize localization variables
+            4) Will Create Publishers and Subscribers in the class
+            5) Will initialize specific robot variables
         """
         ## Loggers and node information
         rospy.init_node(name)
 
+        ## Subclass Functions
         self.map = gMap(name + "Map")
         self.map.painter.addPainter('/GOAL')
         self._name_ = name
 
+        ## Localization Variables
         self.frontierX, self.frontierY = None, None
         self._x_offset = None
         self._y_offset = None
@@ -67,25 +72,33 @@ class turtlebot():
         print "Robot Created"
         print '\n'
 
+
+    """ ---------------------------------------------------------------------------------------
+        Historic Callbacks :: Can delete if not needed, keeping for now
+    --------------------------------------------------------------------------------------- """
+    def odomCallback(self, msg):
+        raise NotImplementedError("Final project version of 'odomCallback' not implemented yet")
+
     def storeGoal(self, msg):
         raise NotImplementedError("Final Project version of 'storeGoal' not implemented yet")
 
     def storeCostmap(self, msg):
         raise NotImplementedError("Final Project version of 'storeCostmap' not implemetned yet")
 
+    """ ---------------------------------------------------------------------------------------
+        Active Callbacks :: Necessary for functionality
+    --------------------------------------------------------------------------------------- """
+    ## '/map' Callback
     def _updateMap(self, msg):
         print "Map received"
         self.map.updateMap(msg)
 
-    def odomCallback(self, msg):
-        raise NotImplementedError("Final project version of 'odomCallback' not implemented yet")
-
-    """------------------Result Functions------------------"""
-
+    ## '/move_base/result' Callback
     def _storeMoveBaseResult(self, msg):
         result = msg.status.status
         self._nextAction(result, msg)
 
+    ## Action Status Handler
     def _nextAction(self, result, msg):
         if result == 0:
             print msg
@@ -104,13 +117,19 @@ class turtlebot():
         else:
             raise RuntimeError("A case we did not think of has occured, fuck that.")
 
-    """------------------Frontier Functions ---------------"""
+    """ ---------------------------------------------------------------------------------------
+        Frontier Functions : Runs map frontier location functions, set's the frontier
+        locaitons in the turtlebot scope so that the robot can know where to go.
+    --------------------------------------------------------------------------------------- """
 
     def findFrontier(self, verbose = False):
         location = self.map.getNextFrontier(verbose)
         self.frontierX, self.frontierY = location
 
-    """------------------General Movement------------------"""
+    """ ---------------------------------------------------------------------------------------
+        General Movement : These functions are the movement functions for the turtlebot.
+        All of the following functions should be in 'meters'
+    --------------------------------------------------------------------------------------- """
 
     def driveTo(self, x, y, theta):
         """
