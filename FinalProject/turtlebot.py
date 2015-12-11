@@ -64,9 +64,9 @@ class turtlebot():
         self.sleeper = rospy.Duration(1)
         rospy.sleep(self.sleeper)
 
-        print '\n\n'
+        print '\n'
         print "Robot Created"
-        print '\n\n'
+        print '\n'
 
     def storeGoal(self, msg):
         raise NotImplementedError("Final Project version of 'storeGoal' not implemented yet")

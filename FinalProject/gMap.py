@@ -1,16 +1,11 @@
 __author__ = 'Troy Hughes'
 
 import rospy
-import math
 import tools
-import Queue
 import tf
 import rVizPainter as rvptr
-from nav_msgs.msg import GridCells
-from nav_msgs.msg import OccupancyGrid
-from geometry_msgs.msg import Point
 from turtleExceptions import FrontierException
-from FrontierExplorer import FullMapExplorer
+import FullMapExplorer as FME
 
 
 class gMap():
@@ -34,18 +29,18 @@ class gMap():
         self.painter.addPainter('/testSquares')
 
         ##   Frontier Explorer ##
-        self.FE = FullMapExplorer.FME()
+        self.FE = FME.FME()
 
-
-
-        print "gMap has been created"
 
     def doneSetup(self):
         if self._mapSet is False:
+            print "Map is not set"
             return False
         if self.current_x is None or self.current_y is None or self.current_theta is None:
+            print "Waiting on location data for robot"
             self._updateLocation()
             return False
+        print 'gMap is properly configured'
         return True
 
     def updateMap(self, msg):
@@ -54,9 +49,6 @@ class gMap():
         :param msg:
         :return:
         """
-        self._updateMap(msg)
-
-    def _updateMap(self, msg):
         self._map = tools.lMaptoLLMap(msg.data,
                                       msg.info.height,
                                       msg.info.width)
@@ -65,6 +57,7 @@ class gMap():
         self._pose = msg.info.origin
         self._mapSet = True
         self._updateLocation()
+
 
     def addValue(self, x, y, value):
         if self._mapSet:
@@ -84,18 +77,8 @@ class gMap():
         :return: self._goal_, self._current_ which is an : x,y,theta location of the goal and an x,y location of the
             robot.
         """
-        self.goalX, self.goalY, self.goaltheta = goalX, goalY, goalTheta
         self._updateLocation()
-
-        print (int(self.goalY), int(self.goalX))
-
-        goal = (self.goalX, self.goalY)
-        """ Stores the goal for a* and the goal for xytheta"""
-        self._goal_pos = (self.goalX, self.goalY)
-        self._goal_ = (self.goalX, self.goalY, self.goaltheta)
-        self._updateLocation()  ## Run a second time for map updating assurance
-        self._goalSet = True
-        return self._goal_, (self.current_x, self.current_y, self.current_theta)
+        raise NotImplementedError("Goal storing is not implemented, currently just updates location")
 
     def _updateLocation(self):
         try:
@@ -115,8 +98,7 @@ class gMap():
         self.current_y = tools.gmapifyValue(y)
         self.current_z = tools.gmapifyValue(z)
         self._currentSet = True
-        self._currentSet = True
-        print "Location values are: ",self.current_x,self.current_y,self.current_theta
+        print "Your robots current location is ",self.current_x,self.current_y,self.current_theta
         return True
 
 
@@ -153,32 +135,6 @@ class gMap():
 
 
 
-    def isAtGoalPosition(self, currentLoc):
-        """
-        Takes in a tuple of (x, y) that is the current robot location.
-        Returns true if we're there, false otherwise.
-        """
-        if tools.distFormula(currentLoc,
-                             self._goal_pos) < 0.1:  # Maybe this error bar should go out globally, or take it in.
-            return True
-        else:
-            return False
-
-    def isAtGoalAngle(self, currentAngle):
-        """
-        Takes in the robot's current angle in radians, tests if that angle is the goal angle.
-        """
-        if abs(currentAngle - self._goal_[2]) < 0.26:  # Like 14 and a half degrees
-            return True
-        else:
-            return False
-
-    def getGoalAngle(self):
-        """
-        Returns the goal angle of the robot for the turtlebot to keep track of.
-        """
-        return self._goal_[2]
-
     def getRobotPosition(self):
         if self.current_x is None:
             print "The positions aren't set", self.current_x, self.current_y
@@ -188,7 +144,7 @@ class gMap():
     def getRobotAngle(self):
         return self.current_theta
 
-    def replaceMap(self, newMap):
+    def overrideMap(self, newMap):
         self._map = newMap
 
     def main(self):
