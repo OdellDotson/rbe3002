@@ -54,7 +54,7 @@ class rVizPainter():
         self._paintNodes[painterName].append(point)
 
 
-    def paint(self,painterName, paintList=[]):
+    def paint(self,painterName, paintList=None):
         """
         This function is used to publish to Rviz and actually paint the lists.
         it takes a list of (x,y) touples in the passed map scope. This function will convert the
@@ -64,8 +64,10 @@ class rVizPainter():
         :param paintList:   <LIST[(x,y) touple]> that is the points to be painted.
         :return:
         """
+
         if not (painterName in self._painters):
             raise PainterException("The painter you wish to paint does not exist")
+        if paintList is None: paintList = []
 
         pointList = self._paintListFromTouples(paintList)
         pointList.extend(self._paintListFromTouples(self._paintNodes[painterName]))

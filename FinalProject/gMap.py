@@ -130,6 +130,15 @@ class gMap():
         ## Pickes the frontier based off the passed heuristic function.
         mapLocationGridCells = self.FE.pickFrontier(frontierList, self.FE.frontierSize)
 
+        ## Ensures the point that you're going to is somewhat viable {{ Does not performe an a* alrogirhm
+        ## as of (Dec, 10) only checks for valid points.
+        safeMapLocation = self.FE.findSafePoint(mapLocationGridCells,
+                                                (self.current_x,self.current_y),
+                                                self._map)
+
+        ## Paint the location that you're moving to
+        self.painter.paint('/testSquares',[mapLocationGridCells])
+
         ## Return the map locaiton in meters so that the pose can just be gone to
         return self.FE.mapLocationMeters(mapLocationGridCells, self.current_x, self.current_y)
 

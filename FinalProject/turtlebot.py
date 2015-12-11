@@ -9,9 +9,8 @@ import rospy
 import tf
 # import tools
 import math
-# Subclass Information
-# from gMap import gMap
 
+# Subclass Information
 from gMap import gMap
 # Message Types
 from geometry_msgs.msg import Twist
@@ -44,7 +43,7 @@ class turtlebot():
         self._x_offset = None
         self._y_offset = None
         self._x, self._y = 0, 0
-        self._notDoneExploring = False;
+        self._notDoneExploring = False
 
         ## Pub/Sub information
         self._drivePublisher = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)

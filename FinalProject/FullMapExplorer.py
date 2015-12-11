@@ -2,11 +2,14 @@ __author__ = 'rbe'
 
 
 import tools
+import math
 
 
 class FME():
-    def __init__(self):
-        pass
+    def __init__(self, cellSize, robotSize):
+        self.numDialations = int(math.ceil(robotSize/cellSize))+2
+
+
 
     def getFrontierList(self,givenMap):
         """
@@ -14,10 +17,14 @@ class FME():
         :return: List of Frontiers, each frontier being a list of <(x,y) touples >
         :return: Raise FrontierException (defined in turtleException file) when there are no more frontiers
         """
+        newMap = tools.dialateOccupancyMap(givenMap,len(givenMap[0]),len(givenMap))
+
+        for i in xrange(self.numDialations-1):
+            newMap = tools.dialateOccupancyMap(newMap,len(givenMap[0]),len(givenMap))
 
         result = []
 
-        for y, row in enumerate(givenMap):
+        for y, row in enumerate(newMap):
             for x, elt in enumerate(row):
                 # check to see if a given node is adjacent to the opposite kind of node
                 # and check that it isn't in any frontier yet
@@ -28,7 +35,7 @@ class FME():
                         isAlreadyFound = True
 
 
-                if (self.isNodeFrontier(x, y, givenMap) and not isAlreadyFound):
+                if (self.isNodeFrontier(x, y, newMap) and not isAlreadyFound):
                     frontier = []
 
                     nodesToExplore = []
@@ -38,7 +45,7 @@ class FME():
                         currentNode = nodesToExplore.pop()
                         frontier.append(currentNode)
 
-                        for n in self.getNeighborsFrontier(currentNode[0], currentNode[1], givenMap):
+                        for n in self.getNeighborsFrontier(currentNode[0], currentNode[1], newMap):
                             if not n in frontier and not n in nodesToExplore:
                                 nodesToExplore.append(n)
 
@@ -148,6 +155,17 @@ class FME():
         return edgeNeighbors
 
 
+    def findSafePoint(self,goalLocation, givenLocation, givenMap):
+        cx,cy = givenLocation
+        gx,gy = goalLocation
+
+        neighbors = tools.getNeighbors(gx,gy,givenMap,101)
+
+        return (gx,gy)
+        
+
+
+
     def test(self):
         print ""
         print "Starting"
@@ -157,17 +175,17 @@ class FME():
                 [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
                 [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
                 [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 1],
-                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 1],
-                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 1],
-                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 0],
+                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 0],
+                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 0],
+                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1],
                 [-1, -1, 100, 0, 0, 0, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, -1, -1],
                 [-1, -1, 100, 0, 0, 0, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, -1, -1, -1],

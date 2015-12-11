@@ -162,7 +162,7 @@ def lMaptoLLMap(lMap, height, width):
         map.append(new_list)
     return map
 
-def getNeighbors( x, y, givenMap, threshold=99):  # TODO Troy has a cleaver way to do this method with try/catches
+def getNeighbors( x, y, givenMap, threshold=99):
         """
         This get's the neighbors of a specific point on the map. This function preemptively removes squares with
         values greater than the threshold. This allows us to remove walls and dangerous zones from the path planning
@@ -206,6 +206,60 @@ def getNeighbors( x, y, givenMap, threshold=99):  # TODO Troy has a cleaver way 
                 to be fixed. The 'except Exception,e' line is used to make sure that the other exceptions are caught
             """
         return goodNeighbors  # State farm joke goes here
+
+def dialateOccupancyMap(givenMap,max_x,max_y):
+    """
+    This function dialates the high value points on a map by 1.
+
+    In other words, if given a map with walls of 100 and open space of 0, it will
+    go thorugh and make the walls 1 square bigger in all directions. This is to protect
+    the robot.
+    :param map:
+    :return:
+    """
+    def dialateNode(map,node,max_x,max_y):
+        """
+        This dialates one node on a map and returns the map.
+
+        :param map: A list of lists of intigers with min 0 and max 100
+        :param node: x,y tuple of the location
+        :param max_x: width of the map
+        :param max_y: height of the map
+        :return:
+        """
+        x,y = node
+        gen_neighbors = [(x-1,y-1),             ## All possible neighbors
+                         (x+1,y+1),
+                         (x+1,y-1),
+                         (x-1,y+1),
+                         (x,y+1),
+                         (x,y-1),
+                         (x-1,y),
+                         (x+1,y)]
+
+        for n in gen_neighbors:
+            nx,ny = n
+            if nx > max_x or ny > max_y or nx < 0 or ny < 0:
+                continue
+            map[ny][nx] = 100
+        return map
+
+    ## Get all the spaces with 100 as their value and put them in a list.
+    taken_spaces = []
+    for y,row in enumerate(givenMap):
+        for x,column in enumerate(givenMap):
+            if map[y][x] == 100:
+                taken_spaces.append((x,y)) ## (x,y)
+            max_x = x
+            max_y = y
+
+    ## Dialate all the spaces in the list.
+    for space in taken_spaces:
+        map = dialateNode(map,space,max_x,max_y)
+
+    return map
+
+
 # def mapifyValue(value):
 #     return int(round(value/cell))
 #
