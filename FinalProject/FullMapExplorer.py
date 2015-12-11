@@ -42,7 +42,7 @@ class FME():
                     nodesToExplore = []
                     nodesToExplore.append((x,y))
 
-                    while nodesToExplore.__len__() > 0:
+                    while len(nodesToExplore) > 0:
                         currentNode = nodesToExplore.pop()
                         frontier.append(currentNode)
 
@@ -52,7 +52,7 @@ class FME():
 
                     result.append(frontier)
 
-        print "Generated Frontier List of ", result.__len__()
+        print "Generated Frontier List of length ", len(result)
 
         return result, newMap
 
@@ -88,7 +88,7 @@ class FME():
                     targetFrontier = elt
 
         print "Found the best frontier, finding the closest point"
-        print "Frontier contains ", targetFrontier.__len__(), " nodes"
+        print "Frontier contains ", len(targetFrontier), " nodes"
 
         ## Find the closest point on the frontier
         currentTarget = targetFrontier[0]
@@ -158,6 +158,11 @@ class FME():
 
 
     def findSafePoint(self,goalLocation, givenLocation, givenMap, threshold = 50):
+        """
+        This function finds a safe point to path to on the givenMap that is below the given threshold.
+        If it is not, this will get neighbots until there is a safe value found to map to.
+        If it looks for too long, the function will just fail and give back the goal location after raising an error.
+        """
         cx,cy = givenLocation
         gx,gy = goalLocation
 
@@ -184,6 +189,9 @@ class FME():
 
 
     def test(self):
+        """
+        This function was used for testing to build the prior function from.
+        """
         print ""
         print "Starting"
         print ""

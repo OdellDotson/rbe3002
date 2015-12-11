@@ -7,7 +7,6 @@ import Queue
 from nav_msgs.msg import GridCells
 from geometry_msgs.msg import Point
 
-
 ## The resolution of the '/map' cells
 cell = 0.3 ## 0.3 m/cell
 
@@ -35,7 +34,7 @@ def normalizeTheta(quaternian_touple):
     :return: a normalized theta from this function
     """
     euler_angles = tf.transformations.euler_from_quaternion(quaternian_touple)
-    ## This will create a euler angle list from the quaternian information
+    ## This will create a euler angle list from the quaternion information
     ## it will be in order of [Roll, Pitch, Yaw] >> Yaw is the rotation about the
     ##     ## z axis where the robot is driving in the xy plane.
     un_normalized_theta = euler_angles[2] ## This theta goes from [0,pi,-pi,0] where [0:0, pi:179 degrees, -pi:181 degrees]
@@ -64,12 +63,12 @@ def makeGridCells(name, width, height, grid_cells=[]):
 
 
 def makePoint(x,y,z=0):
-    point = Point()
     """
     The Point.n values should usually be <Location>*<Size> however in this case
     it is <Location + offsett>*<Size>. This is why the function is so strange. Used
     Guess and check for the offset.
     """
+    point = Point()
     point.x = (x+(0.3)*7)*0.3
     point.y = (y+(0.3)*1)*0.3
     point.z = z
@@ -113,7 +112,7 @@ def lMaptoLLMap(lMap, height, width):
 
 def getNeighbors( x, y, givenMap, threshold=99):
         """
-        This get's the neighbors of a specific point on the map. This function preemptively removes squares with
+        This get's the neighbors of a specific point on the map. This function preemptive removes squares with
         values greater than the threshold. This allows us to remove walls and dangerous zones from the path planning
 
         :param x: x location of the point
@@ -122,11 +121,10 @@ def getNeighbors( x, y, givenMap, threshold=99):
         :return: None
         """
 
-        height = givenMap[0].__len__()
-        width = givenMap.__len__()
+        height = len(givenMap[0])
+        width = len(givenMap)
 
-        if (y > width or x < 0 or y > height or y < 0):
-            return {}
+        if y > width or x < 0 or y > height or y < 0:
             print (x, y)
             raise ReferenceError("getNeighbors out of bound error on x or y coordinate.")
         # Goes through the values, ignores self
