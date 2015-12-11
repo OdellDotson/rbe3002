@@ -128,7 +128,9 @@ class turtlebot():
 
     """ ---------------------------------------------------------------------------------------
         General Movement : These functions are the movement functions for the turtlebot.
-        All of the following functions should be in 'meters'
+        All of the following functions should be in the units that the map being read from
+        This means:
+            Read from /map then the unit's of move should be in /map. 
     --------------------------------------------------------------------------------------- """
 
     def driveTo(self, x, y, theta):
