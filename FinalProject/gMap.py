@@ -60,52 +60,26 @@ class gMap():
         self._updateLocation()#Updates the location
 
 
-    def addValue(self, x, y, value):
-        """
-        Adds a value to the map at a specific point on the map.
-        :param value: the value of the specific map node observed.
-        :param x, y: The values along the map to actually place that value at.
-        """
-        if self._mapSet:
-            raise RuntimeError("Trying to add with no map")
-        try:
-            self._map[y][x] = ((self._map[y][x]) * (0.25) + value * (0.75)) / 2.0 #Updates the map with a weight for new vs old value at that point.
-        except IndexError:
-            pass
-
-    def storeGoal(self, goalX, goalY, goalTheta):
-        """
-        This stores the goal and get's the current location of the robot in the map.
-
-        :param goalX: x location of the goal in the grid frame
-        :param goalY: y location of the goal in the grid frame
-        :param goalTheta: angle of the goal in the grid frame (no difference)
-        :return: self._goal_, self._current_ which is an : x,y,theta location of the goal and an x,y location of the
-            robot.
-        """
-        self._updateLocation()
-        raise NotImplementedError("Goal storing is not implemented, currently just updates location")
-
     def _updateLocation(self):
         """
-        Updates the robot's location on the map.
+        Updates the robot's location on the map. :: All updated values will be in the map frame values.
         """
         try:
             self._map_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(0.5))
         except tf.Exception:
             print "Waiting for transform failed"
-            self.current_x = tools.gmapifyValue(0)
-            self.current_y = tools.gmapifyValue(0)
-            self.current_z = tools.gmapifyValue(0)
+            self.current_x = 0
+            self.current_y = 0
+            self.current_z = 0
             return False
 
         (p, q) = self._map_list.lookupTransform("map", "base_footprint", rospy.Time(0))
         x, y, z = p
         self.current_theta = tools.normalizeTheta(q)
 
-        self.current_x = tools.gmapifyValue(x)
-        self.current_y = tools.gmapifyValue(y)
-        self.current_z = tools.gmapifyValue(z)
+        self.current_x = x
+        self.current_y = y
+        self.current_z = z
         self._currentSet = True
         print "Your robots current location is ",self.current_x,self.current_y,self.current_theta
         return True
