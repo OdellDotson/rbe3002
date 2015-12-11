@@ -3,6 +3,7 @@ __author__ = 'Troy Hughes'
 import math
 import tf
 
+import Queue
 from nav_msgs.msg import GridCells
 from geometry_msgs.msg import Point
 
@@ -89,58 +90,6 @@ def publishListfromTouple(location_list):
 
     return ret_list
 
-
-def dialateOccupancyMap(map):
-    """
-    This function dialates the high value points on a map by 1.
-
-    In other words, if given a map with walls of 100 and open space of 0, it will
-    go thorugh and make the walls 1 square bigger in all directions. This is to protect
-    the robot.
-    :param map:
-    :return:
-    """
-    def dialateNode(map,node,max_x,max_y):
-        """
-        This dialates one node on a map and returns the map.
-
-        :param map: A list of lists of intigers with min 0 and max 100
-        :param node: x,y tuple of the location
-        :param max_x: width of the map
-        :param max_y: height of the map
-        :return:
-        """
-        x,y = node
-        gen_neighbors = [(x-1,y-1),             ## All possible neighbors
-                         (x+1,y+1),
-                         (x+1,y-1),
-                         (x-1,y+1),
-                         (x,y+1),
-                         (x,y-1),
-                         (x-1,y),
-                         (x+1,y)]
-
-        for n in gen_neighbors:
-            nx,ny = n
-            if nx > max_x or ny > max_y or nx < 0 or ny < 0:
-                continue
-            map[ny][nx] = 100
-        return map
-
-    ## Get all the spaces with 100 as their value and put them in a list.
-    taken_spaces = []
-    for y,row in enumerate(map):
-        for x,column in enumerate(row):
-            if map[y][x] == 100:
-                taken_spaces.append((x,y)) ## (x,y)
-            max_x = x
-            max_y = y
-
-    ## Dialate all the spaces in the list.
-    for space in taken_spaces:
-        map = dialateNode(map,space,max_x,max_y)
-
-    return map
 
 def lMaptoLLMap(lMap, height, width):
     """
@@ -247,18 +196,35 @@ def dialateOccupancyMap(givenMap,max_x,max_y):
     ## Get all the spaces with 100 as their value and put them in a list.
     taken_spaces = []
     for y,row in enumerate(givenMap):
-        for x,column in enumerate(givenMap):
-            if map[y][x] == 100:
-                taken_spaces.append((x,y)) ## (x,y)
-            max_x = x
-            max_y = y
-
+        for x,column in enumerate(givenMap[0]):
+            try:
+                if givenMap[y-1][x-1] == 100:
+                    taken_spaces.append((x-1,y-1)) ## (x,y)
+                max_x = x
+                max_y = y
+            except Exception,e:
+                print "X and Y are :", x,y
+                raise e
     ## Dialate all the spaces in the list.
     for space in taken_spaces:
-        map = dialateNode(map,space,max_x,max_y)
+        givenMap = dialateNode(givenMap,space,max_x,max_y)
 
-    return map
+    return givenMap
 
+def findClosest(listOfPoints, goalPoint):
+    gx,gy = goalPoint
+
+    pq = Queue.PriorityQueue()
+
+    for point in listOfPoints:
+        dist = distFormula(point,(gx,gy))
+        pq.put((dist,point))
+
+    if pq.empty():
+        raise RuntimeError("Find Closest given an empty list")
+
+    _,pt = pq.get()
+    return pt
 
 # def mapifyValue(value):
 #     return int(round(value/cell))
@@ -268,8 +234,8 @@ def dialateOccupancyMap(givenMap,max_x,max_y):
 #     return value*cell
 
 def gmapifyValue(value):
-    return int(round(value/0.05))
+    return int(round(float(value)/0.05))
 
 def degmapifyValue(value):
-    return round(value*0.05)
+    return round(float(value)*0.05)
 

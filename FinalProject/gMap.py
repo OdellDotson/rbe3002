@@ -29,7 +29,7 @@ class gMap():
         self.painter.addPainter('/testSquares')
 
         ##   Frontier Explorer ##
-        self.FE = FME.FME()
+        self.FE = FME.FME(0.05,0.352)
 
 
     def doneSetup(self):
@@ -112,7 +112,7 @@ class gMap():
             print "Trying to find a new Frontier"
 
             ## Get the list of frontiers that exist on the map
-            frontierList = self.FE.getFrontierList(self._map)
+            frontierList, dilatedMap = self.FE.getFrontierList(self._map)
             print ""
             print "Fontiers found: "
             for n in frontierList:
@@ -120,7 +120,7 @@ class gMap():
                 print n
             print ""
         else:
-            frontierList = self.FE.getFrontierList(self._map)
+            frontierList, dilatedMap = self.FE.getFrontierList(self._map)
 
         ## Get the map location in grid cells of the frontier to travel to (can expand to have multiple heuristics for this)
         if len(frontierList) == 0:
@@ -134,13 +134,20 @@ class gMap():
         ## as of (Dec, 10) only checks for valid points.
         safeMapLocation = self.FE.findSafePoint(mapLocationGridCells,
                                                 (self.current_x,self.current_y),
-                                                self._map)
+                                                dilatedMap)
+
+        ## Make a big signal for rViz to make it easier to see.
+        signal = []
+        for neighbor in tools.getNeighbors(safeMapLocation[0],safeMapLocation[1],dilatedMap,threshold=50):
+            x,y = neighbor
+            signal.extend(tools.getNeighbors(x,y,dilatedMap,threshold=50))
+            signal.append(neighbor)
 
         ## Paint the location that you're moving to
-        self.painter.paint('/testSquares',[mapLocationGridCells])
+        self.painter.paint('/testSquares',signal)
 
         ## Return the map locaiton in meters so that the pose can just be gone to
-        return self.FE.mapLocationMeters(mapLocationGridCells, self.current_x, self.current_y)
+        return self.FE.mapLocationMeters(safeMapLocation, self.current_x, self.current_y)
 
 
 
@@ -161,3 +168,19 @@ class gMap():
             pass
         except rospy.ROSInterruptException:
             pass
+
+
+def testPainter():
+    rospy.init_node("someName")
+    a = gMap("Name")
+    a.painter.addPainter("/SomeTopic")
+    raw_input("Enter when ready")
+    # paintList = []
+    # for i in xrange(10):
+    #     for j in xrange(100):
+    #         paintList.append((i,j))
+    # a.painter.paint("/SomeTopic",paintList)
+    a.painter.paintGoal('/SomeTopic',(1,1))
+
+    rospy.spin()
+# testPainter()

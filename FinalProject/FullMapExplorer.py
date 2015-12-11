@@ -3,6 +3,8 @@ __author__ = 'rbe'
 
 import tools
 import math
+import rospy
+from turtleExceptions import FrontierException
 
 
 class FME():
@@ -53,7 +55,7 @@ class FME():
 
         print "Generated Frontier List of ", result.__len__()
 
-        return result
+        return result, newMap
 
     def frontierSize(self, targetFrontier):
         """
@@ -115,7 +117,7 @@ class FME():
         return (midx, midy)
 
     def isNodeFrontier(self, x, y, givenMap):
-        """
+        """testSquares
         Returns true if the given coordinate specific a node that:
             Is known reachable space
             Is adjacent to unknown space
@@ -155,14 +157,29 @@ class FME():
         return edgeNeighbors
 
 
-    def findSafePoint(self,goalLocation, givenLocation, givenMap):
+    def findSafePoint(self,goalLocation, givenLocation, givenMap, threshold = 50):
         cx,cy = givenLocation
         gx,gy = goalLocation
 
-        neighbors = tools.getNeighbors(gx,gy,givenMap,101)
+        ## check if the value is acceptable
+        if givenMap[gy][gx] < threshold: return (gx,gy)
+        counter = 0
+        keep_looking = True
+        while (not rospy.is_shutdown()):
+            neighbors = tools.getNeighbors(cx,cy,givenMap=givenMap,threshold=101)
+            for n in neighbors:
+                x,y = n
+                if givenMap[y][x] < 50:
+                    cx,cy = x,y
+                    break
+            cx,cy = tools.findClosest(neighbors, (cx,cy))
+            if counter > 100:
+                raise FrontierException("Failed to find a safe frontier to move towards")
+            counter = counter +1
+
 
         return (gx,gy)
-        
+
 
 
 

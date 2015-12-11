@@ -7,7 +7,6 @@ from geometry_msgs.msg import Point
 from nav_msgs.msg import OccupancyGrid
 from turtleExceptions import PainterException
 
-rospy.Publisher('/not_explored_nodes', GridCells, queue_size=1)
 
 
 class rVizPainter():
@@ -74,6 +73,7 @@ class rVizPainter():
 
         CelltoPublish = GridCells()
         CelltoPublish.header.frame_id = '/map'
+        CelltoPublish.header.stamp = rospy.Time.now()
         CelltoPublish.cell_width = self._gridSize
         CelltoPublish.cell_height = self._gridSize
         CelltoPublish.cells = pointList
@@ -108,3 +108,23 @@ class rVizPainter():
         return ret_list
 
 
+    def paintGoal(self,painterName, point):
+        expandString = ['(x+1,y)','(x-1,y)','(x,y+1)','(x,y-1)']
+
+        toupleList = [point]
+        for string in expandString:
+            x,y = point
+            for i in xrange(20):
+                x,y = eval(string)
+                toupleList.append((x,y))
+        pointList = self._paintListFromTouples(toupleList)
+
+        CelltoPublish = GridCells()
+        CelltoPublish.header.frame_id = '/map'
+        CelltoPublish.cell_width = self._gridSize
+        CelltoPublish.cell_height = self._gridSize
+        CelltoPublish.cells = pointList
+
+        self._painters[painterName].publish(CelltoPublish)
+
+        return CelltoPublish

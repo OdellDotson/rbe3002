@@ -37,6 +37,7 @@ class turtlebot():
         rospy.init_node(name)
 
         self.map = gMap(name + "Map")
+        self.map.painter.addPainter('/GOAL')
         self._name_ = name
 
         self.frontierX, self.frontierY = None, None
@@ -49,8 +50,7 @@ class turtlebot():
         self._drivePublisher = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
         self._cmdVelPub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=1)
 
-        self._baseResultSubscriber = rospy.Subscriber('/move_base/result', MoveBaseActionResult,
-                                                      self._storeMoveBaseResult, queue_size=1)
+        self._baseResultSubscriber = rospy.Subscriber('/move_base/result', MoveBaseActionResult,self._storeMoveBaseResult, queue_size=1)
         self._mapSubscriber = rospy.Subscriber('/map',OccupancyGrid, self._updateMap, queue_size=1)
 
         # #### Private robot Information
@@ -120,6 +120,8 @@ class turtlebot():
         :param theta:
         :return:None
         """
+        self.map.painter.paintGoal('/GOAL',(tools.gmapifyValue(x),
+                                            tools.gmapifyValue(y)))
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.pose.position.x = x
@@ -195,7 +197,6 @@ class turtlebot():
 
 
 
-
     def main(self):
         print "Starting Main"
         while not self.map.doneSetup() and not (rospy.is_shutdown()):
@@ -216,7 +217,7 @@ class turtlebot():
                 if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
                     print "Your frontier location is: ", self.frontierX, self.frontierY,\
                         "You are currently at: ",tools.degmapifyValue(self.map.current_x), tools.degmapifyValue(self.map.current_y)
-
+                    print "Your non-demapped values are: ", self.map.current_x, self.map.current_y
 
                     raise TurtlebotException("I'm in recovery mode! Halp me!")
 
