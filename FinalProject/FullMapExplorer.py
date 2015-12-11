@@ -25,7 +25,6 @@ class FME():
             newMap = tools.dialateOccupancyMap(newMap,len(givenMap[0]),len(givenMap))
 
         result = []
-
         for y, row in enumerate(newMap):
             for x, elt in enumerate(row):
                 # check to see if a given node is adjacent to the opposite kind of node
@@ -66,12 +65,13 @@ class FME():
         return len(targetFrontier)
         # TODO: Currently this just picks whichever point in the frontier is closest and goes there. Maybe not the best?
 
-    def pickFrontier(self, frontierList, heuristic):
+    def pickFrontier(self, frontierList, heuristic, locationTouple):
         """
         :param frontierList: List of Frontiers , list of list of <(x,y) touple > in grid cell location on the map
         :param heuristic: function that only requires a single frontier to make a decision.
         :return:an (x,y) touple of the point to go to in grid cell location on the map
         """
+        cx,cy = locationTouple
         targetFrontier = frontierList[0]
 
         print "Trying to find the best frontier"
@@ -94,8 +94,8 @@ class FME():
         currentTarget = targetFrontier[0]
         for elt in targetFrontier:
             # TODO: replace once frontier testing is done
-            # if tools.distFormula(elt, (self.current_x, self.current_y)) < tools.distFormula(currentTarget, (
-            if tools.distFormula(elt, (0, 0)) < tools.distFormula(currentTarget, (0, 0)):
+            if tools.distFormula(elt, (cx,cy)) < tools.distFormula(currentTarget, (cx,cy)):
+                # if tools.distFormula(elt, (0, 0)) < tools.distFormula(currentTarget, (0, 0)):
                 currentTarget = elt
                 # TODO: Currently this just picks whichever point in the frontier is closest and goes there. Maybe not the best?
 
@@ -110,11 +110,11 @@ class FME():
         """
         gridx, gridy = mapLocationGridCells
 
-        midx = tools.degmapifyValue(float(gridx)+float(x))/2.0
-        midy = tools.degmapifyValue(float(gridy)+float(y))/2.0
+        # midx = tools.degmapifyValue(float(gridx)+float(x))/2.0
+        # midy = tools.degmapifyValue(float(gridy)+float(y))/2.0
 
         # print "The location you're about to go to is", gridx,gridy,"on the grid and",midx,midy,'on the map'
-        return (midx, midy)
+        return (gridx, gridy)
 
     def isNodeFrontier(self, x, y, givenMap):
         """testSquares

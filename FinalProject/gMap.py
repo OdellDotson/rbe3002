@@ -111,7 +111,7 @@ class gMap():
             raise FrontierException("The number of frontiers you have are zero")
 
         ## Pickes the frontier based off the passed heuristic function.
-        mapLocationGridCells = self.FE.pickFrontier(frontierList, self.FE.frontierSize)
+        mapLocationGridCells = self.FE.pickFrontier(frontierList, self.FE.frontierSize, (self.current_x,self.current_y))
 
         ## Ensures the point that you're going to is somewhat viable {{ Does not performe an a* alrogirhm
         ## as of (Dec, 10) only checks for valid points.
