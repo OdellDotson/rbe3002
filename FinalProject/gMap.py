@@ -7,10 +7,8 @@ import rVizPainter as rvptr
 from turtleExceptions import FrontierException
 import FullMapExplorer as FME
 
-
 class gMap():
     def __init__(self, name):
-
         ## Location Information
         self.current_x, self.current_y, self.current_theta = None, None, None
         self._currentSet = False
@@ -33,14 +31,17 @@ class gMap():
 
 
     def doneSetup(self):
-        if self._mapSet is False:
+        """
+        This function checks if the map and robot's position are initialized.
+        """
+        if self._mapSet is False:#If the map is not yet set up.
             print "Map is not set"
             return False
-        if self.current_x is None or self.current_y is None or self.current_theta is None:
+        if self.current_x is None or self.current_y is None or self.current_theta is None:#if any of the robot's x y theta is unset
             print "Waiting on location data for robot"
             self._updateLocation()
             return False
-        print 'gMap is properly configured'
+        print 'gMap is properly configured'#prints that the map and robot are correctly configured.
         return True
 
     def updateMap(self, msg):
@@ -51,19 +52,24 @@ class gMap():
         """
         self._map = tools.lMaptoLLMap(msg.data,
                                       msg.info.height,
-                                      msg.info.width)
-        self._max_h = msg.info.height
-        self._max_w = msg.info.width
-        self._pose = msg.info.origin
+                                      msg.info.width)#Updates the map with the map data, height and width.
+        self._max_h = msg.info.height#Updates max height
+        self._max_w = msg.info.width#Updates max width
+        self._pose = msg.info.origin#Updates the pose to be origin
         self._mapSet = True
-        self._updateLocation()
+        self._updateLocation()#Updates the location
 
 
     def addValue(self, x, y, value):
+        """
+        Adds a value to the map at a specific point on the map.
+        :param value: the value of the specific map node observed.
+        :param x, y: The values along the map to actually place that value at.
+        """
         if self._mapSet:
             raise RuntimeError("Trying to add with no map")
         try:
-            self._map[y][x] = ((self._map[y][x]) * (0.25) + value * (0.75)) / 2.0
+            self._map[y][x] = ((self._map[y][x]) * (0.25) + value * (0.75)) / 2.0 #Updates the map with a weight for new vs old value at that point.
         except IndexError:
             pass
 
@@ -81,6 +87,9 @@ class gMap():
         raise NotImplementedError("Goal storing is not implemented, currently just updates location")
 
     def _updateLocation(self):
+        """
+        Updates the robot's location on the map.
+        """
         try:
             self._map_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(0.5))
         except tf.Exception:
@@ -146,22 +155,25 @@ class gMap():
         ## Paint the location that you're moving to
         self.painter.paint('/testSquares',signal)
 
-        ## Return the map locaiton in meters so that the pose can just be gone to
+        ## Return the map location in meters so that the pose can just be gone to
         return self.FE.mapLocationMeters(safeMapLocation, self.current_x, self.current_y)
 
 
 
-    def getRobotPosition(self):
+    def getRobotPosition(self):#THIS IS THE PART WHERE FRANCE INVADES
+        """
+        Makes sure that the robot's x and y are known, and then returns them if it is.
+        """
         if self.current_x is None:
             print "The positions aren't set", self.current_x, self.current_y
             raise RuntimeError("Positions are still not set!")
         return self.current_x, self.current_y
 
     def getRobotAngle(self):
+        """
+        Returns the robot's theta.
+        """
         return self.current_theta
-
-    def overrideMap(self, newMap):
-        self._map = newMap
 
     def main(self):
         try:
@@ -171,6 +183,9 @@ class gMap():
 
 
 def testPainter():
+    """
+    This function is for testing the painter. Z
+    """
     rospy.init_node("someName")
     a = gMap("Name")
     a.painter.addPainter("/SomeTopic")
