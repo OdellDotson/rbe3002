@@ -175,11 +175,9 @@ class turtlebot():
         """
         print "Starting startup spin "
         # orthoSpins = [math.pi/2, math.pi, -math.pi/2, -math.pi, 0]
-        for i,angle in enumerate([math.pi/2,-math.pi/2]):
+        for i,angle in enumerate([math.pi/2,-math.pi/2, None]):
 
-            self.driveTo(tools.degmapifyValue(self.map.current_x),
-                         tools.degmapifyValue(self.map.current_y),
-                         angle)
+            self.driveTo(self.map.current_x,self.map.current_y,angle)
 
             while self._moving and not self._moveError and not (rospy.is_shutdown()):
                 rospy.sleep(0.1)
@@ -187,14 +185,6 @@ class turtlebot():
                 print "Caught move error in startupSpin"
                 self._moveError = False
             self._moveing = False
-
-        self.driveTo(self.map.current_x,self.map.current_y,None)
-        while self._moving and not self._moveError and not (rospy.is_shutdown()):
-                rospy.sleep(0.1)
-        if self._moveError:
-            print "Failed to return to home spot, but it's cool"
-            self._moveError = False
-        self.moving = False
 
 
     def _recover(self):
