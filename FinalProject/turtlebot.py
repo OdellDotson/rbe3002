@@ -54,22 +54,6 @@ class turtlebot():
                                                       self._storeMoveBaseResult, queue_size=1)
         self._mapSubscriber = rospy.Subscriber('/map',OccupancyGrid, self._updateMap, queue_size=1)
 
-        # self._odom_sub = rospy.Subscriber('/odom', Odometry, self.odomCallback, queue_size=3)
-        # self._click_sub = rospy.Subscriber('/move_base_simple/goalRBE', PoseStamped, self.storeGoal, queue_size=1) # check out the self.map.storeGoal thing
-        # self._local_cost = rospy.Subscriber('/move_base/local_costmap/costmap',OccupancyGrid,self.storeCostmap, queue_size=1)
-        # self._map_sub = rospy.Subscriber('/map', OccupancyGrid, self._updateMap, queue_size=1)
-
-
-        #### Private variables that get updated by callbacks.
-        ## Odom Handlers ##
-        # self._odom_list = tf.TransformListener()
-        # self._odom_tf = tf.TransformBroadcaster()
-        # self._odom_tf.sendTransform((0, 0, 0),(0, 0, 0, 1),rospy.Time.now(),"base_footprint","odom")
-        # ## Map Handlers ##
-        # self._map_list = tf.TransformListener()
-        # ## Goal Handlers ##
-        # self._goal_list = tf.TransformListener()
-        #
         # #### Private robot Information
         self._wheelbase = wheelbase
         self._startupSpinVel = 0.5
@@ -192,10 +176,6 @@ class turtlebot():
         self.moving = False
 
 
-
-
-
-
     def _recover(self):
         """
         This is the recovery mode for the robot. This function will handle when there is a move error.
@@ -214,38 +194,7 @@ class turtlebot():
         return
 
 
-    def test(self):
-        try:
-            tempMap = [
-                    [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-                    [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-                    [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-                    [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                    [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                    [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                    [-1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                    [-1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1],
-                    [-1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1],
-                    [-1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1],
-                    [-1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                    [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                    [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                    [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                    [-1, -1, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1],
-                    [-1, -1, 100, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1],
-                    [-1, -1, 100, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, -1, -1, -1],
-                    [-1, -1, 100, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1],
-                    [-1, -1, 100, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1]
-                ]
 
-            self.map.overrideMap(tempMap)
-            self.map.getNextFrontier()
-
-            print ""
-            print "Finished!"
-            print ""
-        except rospy.ROSInterruptException:
-            pass
 
 
     def main(self):

@@ -162,6 +162,50 @@ def lMaptoLLMap(lMap, height, width):
         map.append(new_list)
     return map
 
+def getNeighbors( x, y, givenMap, threshold=99):  # TODO Troy has a cleaver way to do this method with try/catches
+        """
+        This get's the neighbors of a specific point on the map. This function preemptively removes squares with
+        values greater than the threshold. This allows us to remove walls and dangerous zones from the path planning
+
+        :param x: x location of the point
+        :param y: y location of the point
+        :param threshold: threshold to decide if the value is travelable
+        :return: None
+        """
+
+        height = givenMap[0].__len__()
+        width = givenMap.__len__()
+
+        if (y > width or x < 0 or y > height or y < 0):
+            return {}
+            print (x, y)
+            raise ReferenceError("getNeighbors out of bound error on x or y coordinate.")
+        # Goes through the values, ignores self
+        gen_neighbors = [(x - 1, y - 1),
+                         (x + 1, y + 1),
+                         (x + 1, y - 1),
+                         (x - 1, y + 1),
+                         (x, y + 1),
+                         (x, y - 1),
+                         (x - 1, y),
+                         (x + 1, y)]
+        goodNeighbors = []
+        for move in gen_neighbors:
+            tx, ty = move
+            try:
+                if givenMap[ty][tx] < threshold:
+                    goodNeighbors.append(move)
+            except IndexError:
+                continue
+            except Exception, e:
+                print "getNeighbors Error:"
+                raise e
+            """
+                NOTE: The above thing is just querying the map and catching the index out of bounds errors if they happen.
+                This code may not work if the IndexError is the incorrect error, in this case the 'except IndexError' line would have
+                to be fixed. The 'except Exception,e' line is used to make sure that the other exceptions are caught
+            """
+        return goodNeighbors  # State farm joke goes here
 # def mapifyValue(value):
 #     return int(round(value/cell))
 #
