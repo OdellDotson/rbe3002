@@ -130,7 +130,7 @@ class turtlebot():
         General Movement : These functions are the movement functions for the turtlebot.
         All of the following functions should be in the units that the map being read from
         This means:
-            Read from /map then the unit's of move should be in /map. 
+            Read from /map then the unit's of move should be in /map.
     --------------------------------------------------------------------------------------- """
 
     def driveTo(self, x, y, theta):
@@ -141,8 +141,7 @@ class turtlebot():
         :param theta:
         :return:None
         """
-        self.map.painter.paintGoal('/GOAL',(tools.gmapifyValue(x),
-                                            tools.gmapifyValue(y)))
+        self.map.painter.paintGoal('/GOAL',(x,y))
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.pose.position.x = x
