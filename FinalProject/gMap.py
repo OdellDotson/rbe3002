@@ -8,7 +8,13 @@ from turtleExceptions import FrontierException
 import FullMapExplorer as FME
 
 class gMap():
-    def __init__(self, name):
+    def __init__(self, name, goalTopic):
+        """
+        Takes the name of the object and the name of the topic.
+        :param name: <string>
+        :param goalTopic: <ROSTOPIC formatted String> Ex: '/someTopic'
+        :return:
+        """
         ## Location Information
         self.current_x, self.current_y, self.current_theta = None, None, None
         self._currentSet = False
@@ -24,7 +30,8 @@ class gMap():
         #### Contained Classes ####
         ##   Visualiser Class  ##
         self.painter = rvptr.rVizPainter(name + " Painter", 0.05)
-        self.painter.addPainter('/testSquares')
+        self.goalTopic = goalTopic
+        self.painter.addPainter(self.goalTopic)
 
         ##   Frontier Explorer ##
         self.FE = FME.FME(0.05,0.352)
@@ -127,10 +134,8 @@ class gMap():
             signal.append(neighbor)
 
         ## Paint the location that you're moving to
-        self.painter.paint('/testSquares',signal)
-
-        ## Return the map location in meters so that the pose can just be gone to
-        return self.FE.mapLocationMeters(safeMapLocation, self.current_x, self.current_y)
+        self.painter.paint(self.goalTopic,signal)
+        return safeMapLocation
 
 
 

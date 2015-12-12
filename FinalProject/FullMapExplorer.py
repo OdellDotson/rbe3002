@@ -21,8 +21,8 @@ class FME():
         """
         newMap = tools.dialateOccupancyMap(givenMap,len(givenMap[0]),len(givenMap))
 
-        for i in xrange(self.numDialations-1):
-            newMap = tools.dialateOccupancyMap(newMap,len(givenMap[0]),len(givenMap))
+        # for i in xrange(self.numDialations-1):
+        #     newMap = tools.dialateOccupancyMap(newMap,len(givenMap[0]),len(givenMap))
 
         result = []
         for y, row in enumerate(newMap):
@@ -103,18 +103,15 @@ class FME():
 
         return currentTarget
 
-    def mapLocationMeters(self, mapLocationGridCells, x,y):
-        """
-        :param mapLocationGridCells: (x,y) touple of the location in grid cells
-        :return:(x,y) touple of the location in meters
-        """
-        gridx, gridy = mapLocationGridCells
-
-        # midx = tools.degmapifyValue(float(gridx)+float(x))/2.0
-        # midy = tools.degmapifyValue(float(gridy)+float(y))/2.0
-
-        # print "The location you're about to go to is", gridx,gridy,"on the grid and",midx,midy,'on the map'
-        return (gridx, gridy)
+    # def mapLocationMeters(self, mapLocationGridCells, x,y):
+    #     """
+    #     :param mapLocationGridCells: (x,y) touple of the location in grid cells
+    #     :return:(x,y) touple of the location in meters
+    #     """
+    #     gridx, gridy = mapLocationGridCells
+    #
+    #     # print "The location you're about to go to is", gridx,gridy,"on the grid and",midx,midy,'on the map'
+    #     return (gridx, gridy)
 
     def isNodeFrontier(self, x, y, givenMap):
         """testSquares
@@ -166,21 +163,21 @@ class FME():
         cx,cy = givenLocation
         gx,gy = goalLocation
 
-        ## check if the value is acceptable
-        if givenMap[gy][gx] < threshold: return (gx,gy)
-        counter = 0
-        keep_looking = True
-        while (not rospy.is_shutdown()):
-            neighbors = tools.getNeighbors(cx,cy,givenMap=givenMap,threshold=101)
-            for n in neighbors:
-                x,y = n
-                if givenMap[y][x] < 50:
-                    cx,cy = x,y
-                    break
-            cx,cy = tools.findClosest(neighbors, (cx,cy))
-            if counter > 100:
-                raise FrontierException("Failed to find a safe frontier to move towards")
-            counter = counter +1
+        # ## check if the value is acceptable
+        # if givenMap[gy][gx] < threshold: return (gx,gy)
+        # counter = 0
+        # keep_looking = True
+        # while (not rospy.is_shutdown()):
+        #     neighbors = tools.getNeighbors(cx,cy,givenMap=givenMap,threshold=101)
+        #     for n in neighbors:
+        #         x,y = n
+        #         if givenMap[y][x] < 50:
+        #             cx,cy = x,y
+        #             break
+        #     cx,cy = tools.findClosest(neighbors, (cx,cy))
+        #     if counter > 100:
+        #         raise FrontierException("Failed to find a safe frontier to move towards")
+        #     counter = counter +1
 
 
         return (gx,gy)
