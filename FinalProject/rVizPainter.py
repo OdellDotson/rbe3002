@@ -69,7 +69,7 @@ class rVizPainter():
         if paintList is None: paintList = []
 
         pointList = self._paintListFromTouples(paintList)
-        pointList.extend(self._paintListFromTouples(self._paintNodes[painterName]))
+        # pointList.extend(self._paintListFromTouples(self._paintNodes[painterName]))
 
         CelltoPublish = GridCells()
         CelltoPublish.header.frame_id = '/map'
@@ -108,7 +108,7 @@ class rVizPainter():
         return ret_list
 
 
-    def paintGoal(self,painterName, point):
+    def paintGoal(self,painterName, point, dmap=False):
         expandString = ['(x+1,y)','(x-1,y)','(x,y+1)','(x,y-1)']
 
         toupleList = [point]

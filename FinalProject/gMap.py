@@ -32,6 +32,7 @@ class gMap():
         self.painter = rvptr.rVizPainter(name + " Painter", 0.05)
         self.goalTopic = goalTopic
         self.painter.addPainter(self.goalTopic)
+        self.painter.addPainter("/FRONTIER")
 
         ##   Frontier Explorer ##
         self.FE = FME.FME(0.05,0.352)
@@ -57,11 +58,13 @@ class gMap():
         :param msg:
         :return:
         """
+        print msg.info
         self._map = tools.lMaptoLLMap(msg.data,
                                       msg.info.height,
                                       msg.info.width)#Updates the map with the map data, height and width.
         self._max_h = msg.info.height#Updates max height
         self._max_w = msg.info.width#Updates max width
+        self._res = msg.info.resolution
         self._pose = msg.info.origin#Updates the pose to be origin
         self._mapSet = True
         self._updateLocation()#Updates the location
@@ -88,7 +91,7 @@ class gMap():
         self.current_y = y
         self.current_z = z
         self._currentSet = True
-        print "Your robots current location is ",self.current_x,self.current_y,self.current_theta
+        # print "Your robots current location is ",self.current_x,self.current_y,self.current_theta
         return True
 
 
@@ -103,39 +106,85 @@ class gMap():
 
             ## Get the list of frontiers that exist on the map
             frontierList, dilatedMap = self.FE.getFrontierList(self._map)
-            print ""
-            print "Fontiers found: "
-            for n in frontierList:
-                print ""
-                print n
-            print ""
+            print 'The following will display the frontiers discovered'
+
+            for i,frontier in enumerate(frontierList):
+                self.paintFrontier(frontier)
+                print "Sent frontier to be painted",i
+                print "\t-- The first point on this frontier is: ", frontier[0]
+                rospy.sleep(1.5)
+
         else:
             frontierList, dilatedMap = self.FE.getFrontierList(self._map)
 
-        ## Get the map location in grid cells of the frontier to travel to (can expand to have multiple heuristics for this)
         if len(frontierList) == 0:
-            print frontierList
-            raise FrontierException("The number of frontiers you have are zero")
+            raise FrontierException("The number of frontiers y ou have is zero")
+
 
         ## Pickes the frontier based off the passed heuristic function.
-        mapLocationGridCells = self.FE.pickFrontier(frontierList, self.FE.frontierSize, (self.current_x,self.current_y))
+        currentMapPosition = self.convertGlobalToMap((self.current_x,self.current_y))
+        rawGoalInMap = self.FE.pickFrontier(frontierList, self.FE.frontierSize, currentMapPosition)
 
-        ## Ensures the point that you're going to is somewhat viable {{ Does not performe an a* alrogirhm
-        ## as of (Dec, 10) only checks for valid points.
-        safeMapLocation = self.FE.findSafePoint(mapLocationGridCells,
-                                                (self.current_x,self.current_y),
-                                                dilatedMap)
+        legalGoalInMap = self.setLegalMoveBaseGoal(rawGoalInMap)
 
-        ## Make a big signal for rViz to make it easier to see.
-        signal = []
-        for neighbor in tools.getNeighbors(safeMapLocation[0],safeMapLocation[1],dilatedMap,threshold=50):
-            x,y = neighbor
-            signal.extend(tools.getNeighbors(x,y,dilatedMap,threshold=50))
-            signal.append(neighbor)
+        print "The goal is being painted!"
+        self.paintGoal(self.convertMapToGlobal(legalGoalInMap))
 
-        ## Paint the location that you're moving to
-        self.painter.paint(self.goalTopic,signal)
-        return safeMapLocation
+
+        # ## Ensures the point that you're going to is somewhat viable {{ Does not performe an a* alrogirhm
+        # ## as of (Dec, 10) only checks for valid points.
+        # safeMapLocation = self.FE.findSafePoint(mapLocationGridCells,
+        #                                         currentMapPosition,
+        #                                         dilatedMap)
+        #
+        # return tools.mapPointToGlobal(safeMapLocation,(self._pose.position.x,self._pose.position.y, None))
+        return None, None
+
+    def setLegalMoveBaseGoal(self,point, threshold=65):
+        """
+        This function finds a legal place to make sure that the robot is capable of moving to the location
+
+        :param Point : <x,y> touple representing the locaiton in the gMap
+        """
+        frontierMap = tools.dialateOccupancyMap(self._map,len(self._map),len(self._map[0]))
+        for i in xrange(3):
+            frontierMap = tools.dialateOccupancyMap(frontierMap,len(frontierMap),len(frontierMap[0]))
+
+        px,py = point
+        self.painter.paintGoal(self.goalTopic,self.convertMapToGlobal(point))
+
+        if frontierMap[py][px] > -1  and frontierMap[py][px] < threshold:
+            return point
+
+        raise FrontierException("The frontier you have selected is not within your visiting capabilities")
+
+    def paintFrontier(self, frontier):
+
+        globalFrontier = []
+
+        for f in frontier:
+            globalFrontier.append(self.convertMapToGlobal(f))
+
+        self.painter.paint('/FRONTIER',globalFrontier)
+
+
+    def paintGoal(self, goal):
+        self.painter.paintGoal(self.goalTopic, self.convertMapToGlobal(goal))
+
+
+
+    def convertMapToGlobal(self,point):
+        """
+        Wrapper for the map points to global points
+        """
+        return tools.mapPointToGlobal(point,(self._pose.position.x,self._pose.position.y,None),self._res)
+
+    def convertGlobalToMap(self,point):
+        """
+        Wrapper for global points to map points
+        """
+        return tools.globalPointToMap(point,(self._pose.position.x,self._pose.position.y,None),self._res)
+
 
 
 

@@ -237,3 +237,26 @@ def gmapifyValue(value):
 def degmapifyValue(value):
     return round(float(value)*0.05)
 
+def maptToGlobal(value, valPose, width):
+    return (value*width) + valPose
+
+def mapPointToGlobal(point, xyzPose, width = 0.05):
+    x,y = point
+    xp,yp,zp = xyzPose
+
+    gx = maptToGlobal(x,xp,width)
+    gy = maptToGlobal(y,yp,width)
+    return (gx,gy)
+
+
+def globalToMap(value, valPose, width):
+    return int(math.floor((value + valPose)*width))
+
+def globalPointToMap(point, xyzPose, width = 0.05):
+    x,y = point
+    xp,yp,zp = xyzPose
+
+    gx = globalToMap(x,xp,width)
+    gy = globalToMap(y,yp,width)
+    return (gx,gy)
+

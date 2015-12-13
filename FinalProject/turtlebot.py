@@ -40,8 +40,7 @@ class turtlebot():
         rospy.init_node(name)
 
         ## Subclass Functions
-        self.map = gMap(name + "Map")
-        self.map.painter.addPainter('/GOAL')
+        self.map = gMap(name + "Map","/GOAL")
         self._name_ = name
 
         ## Localization Variables
@@ -173,18 +172,26 @@ class turtlebot():
         :param timeToSpin: <int> the length of time for the robot to spin in a circle
         :return: None
         """
+        startX,startY = self.map.current_x, self.map.current_y
+
         print "Starting startup spin "
-        # orthoSpins = [math.pi/2, math.pi, -math.pi/2, -math.pi, 0]
-        for i,angle in enumerate([math.pi/2,-math.pi/2, None]):
-
-            self.driveTo(self.map.current_x,self.map.current_y,angle)
-
+        locations = [(startX-1,startY),
+                     (startX-1,startY-1),
+                     (startX+1,startY-1),
+                     (startX+1,startY+1),
+                     (startX, startY)]
+        for point in locations:
+            x,y = point
+            self.driveTo(x,y,None)
             while self._moving and not self._moveError and not (rospy.is_shutdown()):
                 rospy.sleep(0.1)
             if self._moveError:
                 print "Caught move error in startupSpin"
                 self._moveError = False
             self._moveing = False
+            rospy.sleep(2)
+
+        print "Startup Spin has ended"
 
 
     def _recover(self):
@@ -205,6 +212,37 @@ class turtlebot():
         return
 
 
+    def testFrontierFinding(self,cacheName = 'FrontierFiles.txt'):
+        """
+        This function is used to test if a frontier finder is working as well as the painting of the
+        frontiers. To use this, there must be a file of name <cacheName> and that file must be formatted
+        as a list of list of touples;. This will be used as the frontiers and the system will display
+        the frontiers accordingly.
+        :return:
+        """
+        print "Reading frontiers"
+        frontierList = eval(self.map.FE.virtualGetFrontierList(cacheName))
+
+        print "There are "+str(len(frontierList[0]))+" Frontiers in your list"
+        gridFrontierList = []
+        for frontier in frontierList:
+            if len(frontier) > 2:
+                someFrontier = []
+                for point in frontier:
+                    x,y = point
+                    someFrontier.append(self.map.convertMapToGlobal((x,y)))
+                gridFrontierList.append(someFrontier)
+
+        print "Painting Frontiers"
+        for i,frontier in enumerate(gridFrontierList):
+            print "This is the "+str(i)+" frontier"
+            for j in xrange(40):
+                self.map.painter.paint('/GOAL',frontier)
+            rospy.sleep(2)
+            print "Here comes the next frontier"
+            print ""
+        print "Done Painting"
+        rospy.spin()
 
 
     def main(self):
@@ -218,18 +256,23 @@ class turtlebot():
             self._notDoneExploring = True
             self.startupSpin()
             print "This map is difficult, let me think..."
-            rospy.sleep(15)
+            rospy.sleep(5)
             print "Ok, I think I'm ready to try and drive somewhere."
             self.findFrontier(verbose = False)
-            self.driveTo(self.frontierX,self.frontierY,None)
-            while self._moving and not(rospy.is_shutdown()):
-                rospy.sleep(0.1)
-                if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
-                    print "Your frontier location is: ", self.frontierX, self.frontierY,\
-                        "You are currently at: ",tools.degmapifyValue(self.map.current_x), tools.degmapifyValue(self.map.current_y)
-                    print "Your non-demapped values are: ", self.map.current_x, self.map.current_y
 
-                    raise TurtlebotException("I'm in recovery mode! Halp me!")
+
+
+
+            # self.driveTo(self.frontierX,self.frontierY,None)
+            # while self._moving and not(rospy.is_shutdown()):
+            #     rospy.sleep(0.1)
+            #     if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
+            #         print "======================================================================="
+            #         print "Frontier Location ::", self.frontierX, self.frontierY
+            #         print "Robot is currently at ::", self.map.current_x, self.map.current_y
+            #
+            #
+            #         raise TurtlebotException("I'm in recovery mode! Halp me!")
 
 
             # while self._notDoneExploring and not (rospy.is_shutdown()):

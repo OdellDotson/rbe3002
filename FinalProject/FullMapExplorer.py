@@ -10,22 +10,27 @@ from turtleExceptions import FrontierException
 class FME():
     def __init__(self, cellSize, robotSize):
         self.numDialations = int(math.ceil(robotSize/cellSize))+2
+        self._minFrontierSize = 5
+        self._frontierCacheName = 'FrontierFiles.txt'
 
 
+    def virtualGetFrontierList(self,fileName):
+        f = open(fileName, 'r')
+        stuff = f.read()
+        f.close()
+        return stuff
 
-    def getFrontierList(self,givenMap):
+
+    def getFrontierList(self,givenMap,cache=True):
         """
         This function finds and creates the list of distinct frontiers and returns it.
         :return: List of Frontiers, each frontier being a list of <(x,y) touples >
         :return: Raise FrontierException (defined in turtleException file) when there are no more frontiers
         """
-        newMap = tools.dialateOccupancyMap(givenMap,len(givenMap[0]),len(givenMap))
 
-        # for i in xrange(self.numDialations-1):
-        #     newMap = tools.dialateOccupancyMap(newMap,len(givenMap[0]),len(givenMap))
 
         result = []
-        for y, row in enumerate(newMap):
+        for y, row in enumerate(givenMap):
             for x, elt in enumerate(row):
                 # check to see if a given node is adjacent to the opposite kind of node
                 # and check that it isn't in any frontier yet
@@ -36,7 +41,7 @@ class FME():
                         isAlreadyFound = True
 
 
-                if (self.isNodeFrontier(x, y, newMap) and not isAlreadyFound):
+                if (self.isNodeFrontier(x, y, givenMap) and not isAlreadyFound):
                     frontier = []
 
                     nodesToExplore = []
@@ -46,15 +51,24 @@ class FME():
                         currentNode = nodesToExplore.pop()
                         frontier.append(currentNode)
 
-                        for n in self.getNeighborsFrontier(currentNode[0], currentNode[1], newMap):
+                        for n in self.getNeighborsFrontier(currentNode[0], currentNode[1], givenMap):
                             if not n in frontier and not n in nodesToExplore:
                                 nodesToExplore.append(n)
 
                     result.append(frontier)
 
         print "Generated Frontier List of length ", len(result)
+        frontierList = []
+        for frontier in result:
+            if len(frontier) > self._minFrontierSize:
+                frontierList.append(frontier)
+        if cache:
+            f = open(self._frontierCacheName,'r+')
+            f.write(str(frontierList))
+            f.close()
 
-        return result, newMap
+
+        return frontierList, givenMap
 
     def frontierSize(self, targetFrontier):
         """
@@ -102,16 +116,6 @@ class FME():
         print "Closest point found at: ", currentTarget
 
         return currentTarget
-
-    # def mapLocationMeters(self, mapLocationGridCells, x,y):
-    #     """
-    #     :param mapLocationGridCells: (x,y) touple of the location in grid cells
-    #     :return:(x,y) touple of the location in meters
-    #     """
-    #     gridx, gridy = mapLocationGridCells
-    #
-    #     # print "The location you're about to go to is", gridx,gridy,"on the grid and",midx,midy,'on the map'
-    #     return (gridx, gridy)
 
     def isNodeFrontier(self, x, y, givenMap):
         """testSquares
@@ -163,25 +167,24 @@ class FME():
         cx,cy = givenLocation
         gx,gy = goalLocation
 
-        # ## check if the value is acceptable
-        # if givenMap[gy][gx] < threshold: return (gx,gy)
-        # counter = 0
-        # keep_looking = True
-        # while (not rospy.is_shutdown()):
-        #     neighbors = tools.getNeighbors(cx,cy,givenMap=givenMap,threshold=101)
-        #     for n in neighbors:
-        #         x,y = n
-        #         if givenMap[y][x] < 50:
-        #             cx,cy = x,y
-        #             break
-        #     cx,cy = tools.findClosest(neighbors, (cx,cy))
-        #     if counter > 100:
-        #         raise FrontierException("Failed to find a safe frontier to move towards")
-        #     counter = counter +1
+        return ((cx+gx)/2,(cy+gy)/2)
 
 
-        return (gx,gy)
-
+    def findMidpoints(self,listOfFrontiers):
+        x_sum,y_sum = 0,0
+        total = 0
+        midpoint_list = []
+        for frontier in listOfFrontiers:
+            for i,point in enumerate(frontier):
+                total = i
+                x,y = point
+                x_sum = x_sum + x
+                y_sum = y_sum + y
+            midpoint_list.append((math.floor(x_sum/total),
+                                  math.floor(y_sum/total)))
+            x_sum,y_sum = 0,0
+            total = 0
+        return midpoint_list
 
 
 
