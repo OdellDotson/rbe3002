@@ -31,11 +31,18 @@ class PathPlanner():
             path = self._getPath(givenMap, currentPosition, goalPosition)
             path.reverse()
 
+            f = open("pathInfo.txt","r+")
+            for i in path:
+                x,y = i
+                f.write("The point was: "+str(i)+" and it's value was "+str(givenMap[y][x]))
+
+            f.close()
+
             travelPoint = path.pop()
             x,y = travelPoint
             while len(path) > 0 and not rospy.is_shutdown():
-                if givenMap[y][x] > 0:
-                    return (x,y)
+                if givenMap[int(y)][int(x)] > 0:
+                    return (int(x),int(y))
                 else:
                     travelPoint = path.pop()
                     x,y = travelPoint

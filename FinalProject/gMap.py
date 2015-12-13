@@ -156,6 +156,7 @@ class gMap():
             return (self.current_x,self.current_y, True)
 
         travelPoint = self.PP.frontierToTravelPoint(self._map,currentMapPosition,nextFrontier)
+        if verbose: print "About to paint the frontier point"
         self.paintGoal(frontierPoint)
 
         if verbose:
