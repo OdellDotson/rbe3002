@@ -124,9 +124,9 @@ def getNeighbors( x, y, givenMap, threshold=99):
         height = len(givenMap[0])
         width = len(givenMap)
 
-        if y > width or x < 0 or y > height or y < 0:
-            print (x, y)
-            raise ReferenceError("getNeighbors out of bound error on x or y coordinate.")
+        # if y > width or x < 0 or y > height or y < 0:
+        #     print (x, y)
+        #     raise ReferenceError("getNeighbors out of bound error on x or y coordinate.")
         # Goes through the values, ignores self
         gen_neighbors = [(x - 1, y - 1),
                          (x + 1, y + 1),
@@ -250,7 +250,7 @@ def mapPointToGlobal(point, xyzPose, width = 0.05):
 
 
 def globalToMap(value, valPose, width):
-    return int(math.floor((value + valPose)*width))
+    return int(math.floor((value - valPose)/width))
 
 def globalPointToMap(point, xyzPose, width = 0.05):
     x,y = point

@@ -3,6 +3,7 @@ __author__ = 'rbe'
 
 import tools
 import math
+import Queue
 import rospy
 from turtleExceptions import FrontierException
 
@@ -186,6 +187,34 @@ class FME():
             total = 0
         return midpoint_list
 
+
+    def sortFrontiers(self, frontierList, heuristic, locationTouple, verbose = True):
+        """
+        :param frontierList: List of Frontiers , list of list of <(x,y) touple > in grid cell location on the map
+        :param heuristic: function that only requires a single frontier to make a decision.
+        :return:an (x,y) touple of the point to go to in grid cell location on the map
+        """
+
+        if verbose: print "Starting ot sort the frontiers"
+        if len(frontierList) == 0:  raise Exception("Passed in an empty frontier list!")
+
+        x_sum,y_sum = 0,0
+        total = 1
+        pq = Queue.PriorityQueue()
+
+        for frontier in frontierList:
+            for i,point in enumerate(frontier):
+                total = i
+                x,y = point
+                x_sum = x_sum + x
+                y_sum = y_sum + y
+            midP = (math.floor(x_sum/total),math.floor(y_sum/total))
+            pq.put((-heuristic(frontier),(midP,frontier)))
+            x_sum,y_sum = 0,0
+            total = 0
+
+        if verbose: print "A priority queue of frontier midpoints has been created"
+        return pq
 
 
     def test(self):

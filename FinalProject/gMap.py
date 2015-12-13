@@ -6,6 +6,7 @@ import tf
 import rVizPainter as rvptr
 from turtleExceptions import FrontierException
 import FullMapExplorer as FME
+import PathPlanner as PP
 
 class gMap():
     def __init__(self, name, goalTopic):
@@ -37,6 +38,10 @@ class gMap():
         ##   Frontier Explorer ##
         self.FE = FME.FME(0.05,0.352)
 
+        ##   Path Planner      ##
+        self.PP = PP.PathPlanner(name+" Path Planner")
+
+
 
     def doneSetup(self):
         """
@@ -58,7 +63,7 @@ class gMap():
         :param msg:
         :return:
         """
-        print msg.info
+
         self._map = tools.lMaptoLLMap(msg.data,
                                       msg.info.height,
                                       msg.info.width)#Updates the map with the map data, height and width.
@@ -86,19 +91,21 @@ class gMap():
         (p, q) = self._map_list.lookupTransform("map", "base_footprint", rospy.Time(0))
         x, y, z = p
         self.current_theta = tools.normalizeTheta(q)
-
-        self.current_x = x
-        self.current_y = y
-        self.current_z = z
+        print "Your P is: ", p
+        self.current_x = (tools.globalToMap(x,self._pose.position.x,self._res))
+        self.current_y = (tools.globalToMap(y,self._pose.position.y,self._res))
+        self.current_z = (tools.globalToMap(z,self._pose.position.z,self._res))
         self._currentSet = True
         # print "Your robots current location is ",self.current_x,self.current_y,self.current_theta
         return True
 
 
 
-    def getNextFrontier(self, Verbose = False):
+    def getFrontierList(self, Verbose = False):
         """
-        :return: Returns a pose on the map in Meters for the robot to drive to
+        This function get's the frontiers that are to be explored and ensures that there are not no lists.
+
+        :return: Returns the list of frontiers checked to ensure that it is not an empty list
         """
 
         if Verbose:
@@ -120,25 +127,44 @@ class gMap():
         if len(frontierList) == 0:
             raise FrontierException("The number of frontiers y ou have is zero")
 
+        return frontierList
+
+    def getNextFrontier(self, verbose=False):
+        try:
+            frontierList = self.getFrontierList(verbose)
+        except FrontierException,e:
+            print "You are done exploring"
+            return (self.current_x,self.current_y, True)
 
         ## Pickes the frontier based off the passed heuristic function.
-        currentMapPosition = self.convertGlobalToMap((self.current_x,self.current_y))
-        rawGoalInMap = self.FE.pickFrontier(frontierList, self.FE.frontierSize, currentMapPosition)
+        currentMapPosition = (self.current_x,self.current_y)
 
-        legalGoalInMap = self.setLegalMoveBaseGoal(rawGoalInMap)
+        frontierQueue = self.FE.sortFrontiers(frontierList, self.FE.frontierSize, currentMapPosition)
 
-        print "The goal is being painted!"
-        self.paintGoal(self.convertMapToGlobal(legalGoalInMap))
+        nextFrontier = None
+        frontierPoint = None
+        while not frontierQueue.empty() and not rospy.is_shutdown():
+            queueItem = frontierQueue.get()
+            p,frontierInfo = queueItem
+            frontierPoint,frontier = frontierInfo
+            if self.PP.canTravelTo(self._map,currentMapPosition,frontierPoint):
+                nextFrontier = frontierPoint
+                self.paintFrontier(frontier)
+                break
+        if nextFrontier is None:
+            print "You are done exploring"
+            return (self.current_x,self.current_y, True)
 
+        travelPoint = self.PP.frontierToTravelPoint(self._map,currentMapPosition,nextFrontier)
+        self.paintGoal(frontierPoint)
 
-        # ## Ensures the point that you're going to is somewhat viable {{ Does not performe an a* alrogirhm
-        # ## as of (Dec, 10) only checks for valid points.
-        # safeMapLocation = self.FE.findSafePoint(mapLocationGridCells,
-        #                                         currentMapPosition,
-        #                                         dilatedMap)
-        #
-        # return tools.mapPointToGlobal(safeMapLocation,(self._pose.position.x,self._pose.position.y, None))
-        return None, None
+        if verbose:
+            print "Your Travel point is:", travelPoint
+            print "Your frontier midpoint is: ", frontierPoint
+
+        globalPoint = self.convertGlobalToMap(travelPoint)
+        x,y = globalPoint
+        return (x,y,False)
 
     def setLegalMoveBaseGoal(self,point, threshold=65):
         """
@@ -168,8 +194,10 @@ class gMap():
         self.painter.paint('/FRONTIER',globalFrontier)
 
 
-    def paintGoal(self, goal):
-        self.painter.paintGoal(self.goalTopic, self.convertMapToGlobal(goal))
+    def paintGoal(self, goal, isGlobal=False):
+        if isGlobal: self.painter.paintGoal(self.goalTopic, goal)
+        else: self.painter.paintGoal(self.goalTopic, self.convertMapToGlobal(goal))  ## Default case
+
 
 
 
