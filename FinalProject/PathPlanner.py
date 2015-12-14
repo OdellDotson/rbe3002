@@ -20,30 +20,36 @@ class PathPlanner():
         :return:
         """
         try:
-            self._getPath(givenMap, currentPosition,goalPosition)
+            val = self._getPath(givenMap, currentPosition,goalPosition)
             return True
-        except PathPlannerException,e:
+        except Exception,e:
+            print "Failed in canTravelTo"
             return False
 
 
     def frontierToTravelPoint(self, givenMap, currentPosition, goalPosition):
         try:
             path = self._getPath(givenMap, currentPosition, goalPosition)
-            path.reverse()
 
-            f = open("pathInfo.txt","r+")
-            for i in path:
-                x,y = i
-                f.write("The point was: "+str(i)+" and it's value was "+str(givenMap[y][x]))
-
-            f.close()
-
+            # f = open("pathInfo.txt","r+")
+            # for i in path:
+            #     x,y = i
+            #     f.write("The point was: "+str(i)+" and it's value was "+str(givenMap[y][x]))
+            #
+            # f.close()
+            print "The passed point is: ", currentPosition
             travelPoint = path.pop()
             x,y = travelPoint
+            counter = 0
             while len(path) > 0 and not rospy.is_shutdown():
-                if givenMap[int(y)][int(x)] > 0:
-                    return (int(x),int(y))
+                print "Looking for a value..."
+                if givenMap[int(y)][int(x)] >= 0:
+                    counter = counter + 1
+                    if counter > 3:
+                        print "Your point is: ", (int(x),int(y)), givenMap[int(y)][int(x)]
+                        return travelPoint
                 else:
+                    counter = 0
                     travelPoint = path.pop()
                     x,y = travelPoint
             raise PathPlannerException("Failed to find a path")

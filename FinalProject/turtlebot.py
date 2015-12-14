@@ -141,7 +141,10 @@ class turtlebot():
         :param theta:
         :return:None
         """
-        self.map.painter.paintGoal('/GOAL',(x,y))
+        if x is None or y is None:
+            raise TurtlebotException("It's none bruh. Why do you want me to drive to none? ")
+        print "We would like to drive to :",x,y
+        self.map.paintGoal((x,y),True)
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.pose.position.x = x
@@ -173,7 +176,8 @@ class turtlebot():
         :param timeToSpin: <int> the length of time for the robot to spin in a circle
         :return: None
         """
-        startX,startY = self.map.current_x, self.map.current_y
+        start = self.map.getRobotPosition()
+        startX,startY = start
 
         print "Starting startup spin "
         locations = [(startX-1,startY),
@@ -203,7 +207,8 @@ class turtlebot():
 
         :return:
         """
-        self.startupSpin(30)
+        print "\t ---- Recovery Mode ------"
+        self.startupSpin()
         try:
             self.findFrontier()
             self._moveError = False
@@ -254,32 +259,24 @@ class turtlebot():
 
         try:
 
-            # self._notDoneExploring = True
-            # self.startupSpin()
-            # print "This map is difficult, let me think..."
-            # rospy.sleep(5)
+            self._notDoneExploring = True
+            self.startupSpin()
+            print "This map is difficult, let me think..."
+            rospy.sleep(5)
             print "Ok, I think I'm ready to try and drive somewhere."
             self.findFrontier(verbose = False)
 
             self.driveTo(self.frontierX,self.frontierY,None)
-            while self._moving and not(rospy.is_shutdown()):
-                rospy.sleep(0.1)
-                if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
-                    print "======================================================================="
-                    print "You're lost :( sad "
-                    raise TurtlebotException("I'm in recovery mode! Halp me!")
+            while self._notDoneExploring and not (rospy.is_shutdown()):
+                self.findFrontier()
+                self.driveTo(self.frontierX,self.frontierY,None)
+                while self._moving and not(rospy.is_shutdown()):
+                    rospy.sleep(0.1)
+                    if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
+                        self._recover()
 
 
-            # while self._notDoneExploring and not (rospy.is_shutdown()):
-            #     self.findFrontier()
-            #     self.driveTo(self.frontierX,self.frontierY,None)
-            #     while self._moving and not(rospy.is_shutdown()):
-            #         rospy.sleep(0.1)
-            #         if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
-            #             self._recover()
-            #
-            #
-            # print "Frontiers Explored,"
+            print "Frontiers Explored,"
 
         except rospy.ROSInterruptException:
             pass

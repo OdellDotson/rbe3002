@@ -67,6 +67,7 @@ class gMap():
         self._map = tools.lMaptoLLMap(msg.data,
                                       msg.info.height,
                                       msg.info.width)#Updates the map with the map data, height and width.
+        self._map = tools.dialateOccupancyMap(self._map, len(self._map[0]),len(self._map))
         self._max_h = msg.info.height#Updates max height
         self._max_w = msg.info.width#Updates max width
         self._res = msg.info.resolution
@@ -91,7 +92,6 @@ class gMap():
         (p, q) = self._map_list.lookupTransform("map", "base_footprint", rospy.Time(0))
         x, y, z = p
         self.current_theta = tools.normalizeTheta(q)
-        print "Your P is: ", p
         self.current_x = (tools.globalToMap(x,self._pose.position.x,self._res))
         self.current_y = (tools.globalToMap(y,self._pose.position.y,self._res))
         self.current_z = (tools.globalToMap(z,self._pose.position.z,self._res))
@@ -129,7 +129,7 @@ class gMap():
 
         return frontierList
 
-    def getNextFrontier(self, verbose=False):
+    def getNextFrontier(self, verbose=True):
         try:
             frontierList = self.getFrontierList(verbose)
         except FrontierException,e:
@@ -143,27 +143,37 @@ class gMap():
 
         nextFrontier = None
         frontierPoint = None
+        path = None
         while not frontierQueue.empty() and not rospy.is_shutdown():
             queueItem = frontierQueue.get()
             p,frontierInfo = queueItem
             frontierPoint,frontier = frontierInfo
             if self.PP.canTravelTo(self._map,currentMapPosition,frontierPoint):
+                path = self.PP._getPath(self._map, currentMapPosition, frontierPoint)
                 nextFrontier = frontierPoint
                 self.paintFrontier(frontier)
+                ## self.paintFrontier(path)
                 break
         if nextFrontier is None:
             print "You are done exploring"
             return (self.current_x,self.current_y, True)
 
-        travelPoint = self.PP.frontierToTravelPoint(self._map,currentMapPosition,nextFrontier)
-        if verbose: print "About to paint the frontier point"
-        self.paintGoal(frontierPoint)
+        if verbose: print "Your frontier point is: " ,frontierPoint
+        if verbose: print "The global frontier popint is: ", self.convertMapToGlobal(frontierPoint)
+
+        print "Before running: ", frontierPoint
+
+        # self.paintGoal(frontierPoint)
+        travelPoint = self.PP.frontierToTravelPoint(self._map,currentMapPosition,frontierPoint)
+        print "Frontier Point is: ", frontierPoint
+        print "Travel Point is: ", travelPoint
+        self.paintGoal(travelPoint)
 
         if verbose:
             print "Your Travel point is:", travelPoint
             print "Your frontier midpoint is: ", frontierPoint
 
-        globalPoint = self.convertGlobalToMap(travelPoint)
+        globalPoint = self.convertMapToGlobal(travelPoint)
         x,y = globalPoint
         return (x,y,False)
 
@@ -224,7 +234,7 @@ class gMap():
         if self.current_x is None:
             print "The positions aren't set", self.current_x, self.current_y
             raise RuntimeError("Positions are still not set!")
-        return self.current_x, self.current_y
+        return self.convertMapToGlobal((self.current_x,self.current_y))
 
     def getRobotAngle(self):
         """

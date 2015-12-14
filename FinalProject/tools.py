@@ -224,13 +224,6 @@ def findClosest(listOfPoints, goalPoint):
     _,pt = pq.get()
     return pt
 
-# def mapifyValue(value):
-#     return int(round(value/cell))
-#
-#
-# def demapifyValue(value):
-#     return value*cell
-
 def gmapifyValue(value):
     return int(round(float(value)/0.05))
 
