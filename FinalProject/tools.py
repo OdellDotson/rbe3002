@@ -121,12 +121,6 @@ def getNeighbors( x, y, givenMap, threshold=99):
         :return: None
         """
 
-        height = len(givenMap[0])
-        width = len(givenMap)
-
-        # if y > width or x < 0 or y > height or y < 0:
-        #     print (x, y)
-        #     raise ReferenceError("getNeighbors out of bound error on x or y coordinate.")
         # Goes through the values, ignores self
         gen_neighbors = [(x - 1, y - 1),
                          (x + 1, y + 1),
@@ -210,6 +204,13 @@ def dialateOccupancyMap(givenMap,max_x,max_y):
     return givenMap
 
 def findClosest(listOfPoints, goalPoint):
+    """
+    Returns the closest point to a goal from a list of points
+
+    :param listOfPoints: List of List of <x,y> points
+    :param goalPoint: <(x,y) touple>
+    :return:
+    """
     gx,gy = goalPoint
 
     pq = Queue.PriorityQueue()
@@ -224,13 +225,16 @@ def findClosest(listOfPoints, goalPoint):
     _,pt = pq.get()
     return pt
 
-def gmapifyValue(value):
-    return int(round(float(value)/0.05))
-
-def degmapifyValue(value):
-    return round(float(value)*0.05)
-
 def maptToGlobal(value, valPose, width):
+    """
+    Converts a map to a global cell through the value of the cell, the pose location
+    and the width of the cell. 
+
+    :param value:
+    :param valPose:
+    :param width:
+    :return:
+    """
     return (value*width) + valPose
 
 def mapPointToGlobal(point, xyzPose, width = 0.05):

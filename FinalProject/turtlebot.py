@@ -277,7 +277,6 @@ class turtlebot():
                         print e
                         self._notDoneExploring = False
 
-
             print "Frontiers Explored,"
 
         except rospy.ROSInterruptException:
