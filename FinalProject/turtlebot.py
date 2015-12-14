@@ -73,18 +73,6 @@ class turtlebot():
 
 
     """ ---------------------------------------------------------------------------------------
-        Historic Callbacks :: Can delete if not needed, keeping for now
-    --------------------------------------------------------------------------------------- """
-    def odomCallback(self, msg):
-        raise NotImplementedError("Final project version of 'odomCallback' not implemented yet")
-
-    def storeGoal(self, msg):
-        raise NotImplementedError("Final Project version of 'storeGoal' not implemented yet")
-
-    def storeCostmap(self, msg):
-        raise NotImplementedError("Final Project version of 'storeCostmap' not implemetned yet")
-
-    """ ---------------------------------------------------------------------------------------
         Active Callbacks :: Necessary for functionality
     --------------------------------------------------------------------------------------- """
     ## '/map' Callback
@@ -117,7 +105,8 @@ class turtlebot():
 
     """ ---------------------------------------------------------------------------------------
         Frontier Functions : Runs map frontier location functions, set's the frontier
-        locaitons in the turtlebot scope so that the robot can know where to go.
+        locaitons in the turtlebot scope so that the robot can know where to go. This value
+        is returned to be in the global scope.
     --------------------------------------------------------------------------------------- """
 
     def findFrontier(self, verbose = False):
@@ -136,15 +125,20 @@ class turtlebot():
     def driveTo(self, x, y, theta):
         """
         This will publish a PoseStampped message to tell the robot to move to the x,y,theta position on the map
-        :param x:
-        :param y:
-        :param theta:
+        This function will also publish where it wasnts to go to the /GOAL topic AND will set the self._moving
+        value to true, so the system knows if the robot is moving or not
+
+        :param x: global x value
+        :param y: global y value
+        :param theta: Theta the robot should look in
         :return:None
         """
         if x is None or y is None:
             raise TurtlebotException("It's none bruh. Why do you want me to drive to none? ")
-        print "We would like to drive to :",x,y
+        print "Robot will now drive to: ",x,y
         self.map.paintGoal((x,y),True)
+
+        ### Create the poseStamped message to publish ###
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.pose.position.x = x
@@ -165,25 +159,25 @@ class turtlebot():
         msg.pose.orientation.z = qz
         msg.pose.orientation.w = qw
 
+        ### Publish the message and let the robot know it's moving ###
         self._drivePublisher.publish(msg)
         self._moving = True
 
-    def startupSpin(self):
+    def startupSpin(self, sleepTime = 3, verbose = False):
         """
-        This will be the method that causes the robot to spin about it's axis for 'timeToSpin' seconds. this will
-        stop the robot when it is done spinning for timeToSpin seconds.
-
-        :param timeToSpin: <int> the length of time for the robot to spin in a circle
+        This method causes the robot to try and randomly move about the field to rapidly learn about it's environment.
+        :param sleepTime: <int> The duration that the system will sleep in between locations
+        :param verbose : <boolean> if the robot should speak to us
         :return: None
         """
         start = self.map.getRobotPosition()
         startX,startY = start
 
-        print "Starting startup spin "
+        print "Running 'startupSpin' algorithm."
         locations = [(startX-1,startY),
-                     (startX-1,startY-1),
-                     (startX+1,startY-1),
-                     (startX+1,startY+1),
+                     (startX,startY-1),
+                     (startX+1,startY),
+                     (startX,startY+1),
                      (startX, startY)]
         for point in locations:
             x,y = point
@@ -191,12 +185,12 @@ class turtlebot():
             while self._moving and not self._moveError and not (rospy.is_shutdown()):
                 rospy.sleep(0.1)
             if self._moveError:
-                print "Caught move error in startupSpin"
+                if verbose: print "Caught move error in startupSpin"
                 self._moveError = False
             self._moveing = False
-            rospy.sleep(2)
+            rospy.sleep(sleepTime)
 
-        print "Startup Spin has ended"
+        if verbose: print "Exiting 'startupSpin' algorithm"
 
 
     def _recover(self):
@@ -207,8 +201,8 @@ class turtlebot():
 
         :return:
         """
-        print "\t ---- Recovery Mode ------"
-        self.startupSpin()
+        print "\t ------- Recovery Mode ---------"
+        self.startupSpin(sleepTime=1)
         try:
             self.findFrontier()
             self._moveError = False
@@ -270,10 +264,18 @@ class turtlebot():
             while self._notDoneExploring and not (rospy.is_shutdown()):
                 self.findFrontier()
                 self.driveTo(self.frontierX,self.frontierY,None)
-                while self._moving and not(rospy.is_shutdown()):
+
+                ## Wait until the robot is either: A) done moving or B) it cannot reach the location it wants to go to
+                while self._moving and (not self._moveError) and not(rospy.is_shutdown()):
                     rospy.sleep(0.1)
-                    if self._moveError:                                     ## This will happen whenever the robot has a goal that it decides it cannot make it to.
+
+                ## If the robot quit the loop because there's a move error:
+                if self._moveError:
+                    try:                                ## Try to recover
                         self._recover()
+                    except TurtlebotException,e:        ## here for detecting that you finished
+                        print e
+                        self._notDoneExploring = False
 
 
             print "Frontiers Explored,"
@@ -282,5 +284,5 @@ class turtlebot():
             pass
         print "Terminating"
 
-Turtle = turtlebot("DeezNuts")
+Turtle = turtlebot("Spanish Inquisition")
 Turtle.main()
