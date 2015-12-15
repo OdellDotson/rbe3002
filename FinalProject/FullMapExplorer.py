@@ -14,12 +14,15 @@ class FME():
         self._minFrontierSize = 5
         self._frontierCacheName = 'FrontierFiles.txt'
 
-
     def virtualGetFrontierList(self,fileName):
-        f = open(fileName, 'r')
-        stuff = f.read()
-        f.close()
-        return stuff
+        """
+        This function retrieves the frontiers from a given file and returns the
+        :param:fileName This is the file that we will retrieve our frontiers from. (Probably 'FrontierFiles.txt' if you forget.)
+        """
+        frontierFile = open(fileName, 'r')
+        frontiers = f.read()
+        frontierFile.close()
+        return frontiers
 
 
     def getFrontierList(self,givenMap,cache=True):
@@ -28,8 +31,6 @@ class FME():
         :return: List of Frontiers, each frontier being a list of <(x,y) touples >
         :return: Raise FrontierException (defined in turtleException file) when there are no more frontiers
         """
-
-
         result = []
         for y, row in enumerate(givenMap):
             for x, elt in enumerate(row):
@@ -42,7 +43,7 @@ class FME():
                         isAlreadyFound = True
 
 
-                if (self.isNodeFrontier(x, y, givenMap) and not isAlreadyFound):
+                if self.isNodeFrontier(x, y, givenMap) and not isAlreadyFound:
                     frontier = []
 
                     nodesToExplore = []
@@ -75,10 +76,9 @@ class FME():
         """
         :param targetFrontier: The frontier, a list of (x,y) points that make up a frontier
 
-        :return: <int> representing the number of 'points' in the frontier
+        :return: <int> representing the number of 'points' in the frontier, the total size of the frontier.
         """
         return len(targetFrontier)
-        # TODO: Currently this just picks whichever point in the frontier is closest and goes there. Maybe not the best?
 
     def pickFrontier(self, frontierList, heuristic, locationTouple):
         """
@@ -96,26 +96,18 @@ class FME():
 
         ## Select the largest frontier
         elif len(frontierList) != 1:
-            for elt in frontierList:
-                # Check if the next frontier is a better candidate for travel
-                # Assuming a larger Heuristic is better
-                if heuristic(targetFrontier) < heuristic(elt):
+            for elt in frontierList:# Assuming a larger Heuristic is better,
+                if heuristic(targetFrontier) < heuristic(elt):# Check if the next frontier is a better candidate for travel
                     targetFrontier = elt
 
-        print "Found the best frontier, finding the closest point"
-        print "Frontier contains ", len(targetFrontier), " nodes"
+        print "Best frontier found, contains ", len(targetFrontier), " nodes"
 
         ## Find the closest point on the frontier
         currentTarget = targetFrontier[0]
         for elt in targetFrontier:
-            # TODO: replace once frontier testing is done
             if tools.distFormula(elt, (cx,cy)) < tools.distFormula(currentTarget, (cx,cy)):
-                # if tools.distFormula(elt, (0, 0)) < tools.distFormula(currentTarget, (0, 0)):
-                currentTarget = elt
-                # TODO: Currently this just picks whichever point in the frontier is closest and goes there. Maybe not the best?
-
+                currentTarget = elt # Update which is the closest element in the target frontier.
         print "Closest point found at: ", currentTarget
-
         return currentTarget
 
     def isNodeFrontier(self, x, y, givenMap):
@@ -128,14 +120,13 @@ class FME():
         :return:
         """
 
-        if (givenMap[y][x] > -1 and givenMap[y][x] < 50):
+        if -1 < givenMap[y][x] < 50:
             neighbors = tools.getNeighbors(x, y, givenMap)
 
             for n in neighbors:
                 x, y = n
-                if (givenMap[y][x] == -1):
+                if givenMap[y][x] == -1:
                     return True
-
         return False
 
 
@@ -146,35 +137,43 @@ class FME():
         :param y:
         :return:
         """
-        goodNeigbhors = tools.getNeighbors(x, y, givenMap)
+        goodNeighbors = tools.getNeighbors(x, y, givenMap)
 
         edgeNeighbors = []
 
-        for n in goodNeigbhors:
+        for n in goodNeighbors:
             nodeX, nodeY = n
-
             if self.isNodeFrontier(nodeX, nodeY, givenMap):
                 edgeNeighbors.append(n)
 
         return edgeNeighbors
 
 
-    def findSafePoint(self,goalLocation, givenLocation, givenMap, threshold = 50):
+    def findSafePoint(self,goalLocation, givenLocation): # givenMap, threshold = 50): (Why were these here? what's going on?)
         """
         This function finds a safe point to path to on the givenMap that is below the given threshold.
-        If it is not, this will get neighbots until there is a safe value found to map to.
+        If it is not, this will get neighbors until there is a safe value found to map to.
         If it looks for too long, the function will just fail and give back the goal location after raising an error.
         """
         cx,cy = givenLocation
         gx,gy = goalLocation
 
-        return ((cx+gx)/2,(cy+gy)/2)
+        return (cx+gx)/2,(cy+gy)/2
 
 
     def findMidpoints(self,listOfFrontiers):
+        """
+        Given a list of frontiers, this function will return a list of the midpoints of those frontiers, in the same order.
+
+        :param listOfFrontiers: The list of frontiers for which to find midpoints.
+        """
         x_sum,y_sum = 0,0
         total = 0
         midpoint_list = []
+
+        if len(listOfFrontiers) == 0:
+            raise FrontierException("When trying to find midpoints, there were no frontiers to search from.")
+
         for frontier in listOfFrontiers:
             for i,point in enumerate(frontier):
                 total = i
@@ -216,43 +215,5 @@ class FME():
         if verbose: print "A priority queue of frontier midpoints has been created"
         return pq
 
-
-    def test(self):
-        """
-        This function was used for testing to build the prior function from.
-        """
-        print ""
-        print "Starting"
-        print ""
-
-        tempMap = [
-                [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-                [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-                [-1, -1, 100, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 0],
-                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 0],
-                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 0],
-                [-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [-1, -1, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1],
-                [-1, -1, 100, 0, 0, 0, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, -1, -1],
-                [-1, -1, 100, 0, 0, 0, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, -1, -1, -1],
-                [-1, -1, 100, 0, 0, 0, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, -1, -1, -1, -1],
-                [-1, -1, 100, 0, 0, 0, -1, -1, -1, -1, -1, -1, 0, 0, 0, -1, -1, -1, -1, -1]
-            ]
-
-        self.getFrontierList(tempMap)
-
-        print ""
-        print "Finished!"
-        print ""
-
-#
 # a = FME()
 # a.test()

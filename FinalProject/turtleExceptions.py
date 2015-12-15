@@ -10,7 +10,6 @@ class FrontierException(Exception):
     def __str__(self):
         return repr(self.value)
 
-
 class TurtlebotException(Exception):
     """
         This class is used for creating and managing exceptions in the turtlebot

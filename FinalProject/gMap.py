@@ -34,6 +34,7 @@ class gMap():
         self.goalTopic = goalTopic
         self.painter.addPainter(self.goalTopic)
         self.painter.addPainter("/FRONTIER")
+        self.painter.addPainter("/PATH")
 
         ##   Frontier Explorer ##
         self.FE = FME.FME(0.05,0.352)
@@ -67,7 +68,8 @@ class gMap():
         self._map = tools.lMaptoLLMap(msg.data,
                                       msg.info.height,
                                       msg.info.width)#Updates the map with the map data, height and width.
-        self._map = tools.dialateOccupancyMap(self._map, len(self._map[0]),len(self._map))
+        for i in xrange(6): # Troy likes the number 3, TODO: Is 3 actually the width of the robot?
+            self._map = tools.dialateOccupancyMap(self._map, len(self._map[0]),len(self._map))
         self._max_h = msg.info.height#Updates max height
         self._max_w = msg.info.width#Updates max width
         self._res = msg.info.resolution
@@ -130,13 +132,16 @@ class gMap():
         return frontierList
 
     def getNextFrontier(self, verbose=True):
+        """
+        Gets the next frontier!
+        """
         try:
             frontierList = self.getFrontierList(verbose)
         except FrontierException,e:
             print "You are done exploring"
             return (self.current_x,self.current_y, True)
 
-        ## Pickes the frontier based off the passed heuristic function.
+        ## Picks the frontier based off the passed heuristic function.
         currentMapPosition = (self.current_x,self.current_y)
 
         frontierQueue = self.FE.sortFrontiers(frontierList, self.FE.frontierSize, currentMapPosition)
@@ -175,7 +180,7 @@ class gMap():
 
         globalPoint = self.convertMapToGlobal(travelPoint)
         x,y = globalPoint
-        return (x,y,False)
+        return x,y,False
 
     def setLegalMoveBaseGoal(self,point, threshold=65):
         """
@@ -190,12 +195,16 @@ class gMap():
         px,py = point
         self.painter.paintGoal(self.goalTopic,self.convertMapToGlobal(point))
 
-        if frontierMap[py][px] > -1  and frontierMap[py][px] < threshold:
+        if threshold > frontierMap[py][px] > -1:
             return point
 
         raise FrontierException("The frontier you have selected is not within your visiting capabilities")
 
     def paintFrontier(self, frontier):
+        """
+        Publishes to the /FRONTIER topic to paint a frontier.
+        :param frontier: The frontier to paint.
+        """
 
         globalFrontier = []
 
@@ -203,6 +212,19 @@ class gMap():
             globalFrontier.append(self.convertMapToGlobal(f))
 
         self.painter.paint('/FRONTIER',globalFrontier)
+
+    def paintPath(self, path):
+        """
+        Publishes to the /PATH topic to paint a path given.
+        :param path: The path to paint.
+        """
+
+        pathToPaint = []
+
+        for waypoint in path:
+            pathToPaint.append(self.convertMapToGlobal(waypoint))
+
+        self.painter.paint('/PATH', pathToPaint)
 
 
     def paintGoal(self, goal, isGlobal=False):

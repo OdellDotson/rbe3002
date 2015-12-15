@@ -13,30 +13,43 @@ class PathPlanner():
 
     def canTravelTo(self, givenMap, currentPosition,goalPosition):
         """
-        This function returns a boolean if there is no safe path beteen the goal and the current locaiton
-        :param givenMap:
-        :param currentPosition:
-        :param goalPosition:
-        :return:
+        This function returns a boolean if there is no safe path between the goal and the current location
+        :param givenMap: The map to search for a location
+        :param currentPosition: The current position of the robot on the givenMap
+        :param goalPosition: The goal position on the givenMap.
+        :return: Boolean of if it can travel or not.
         """
         try:
             val = self._getPath(givenMap, currentPosition,goalPosition)
             return True
-        except Exception,e:
-            print "Failed in canTravelTo"
+        except PathPlannerException,e:
+            print "Failed in canTravelTo, exception: ", e
             return False
 
 
     def frontierToTravelPoint(self, givenMap, currentPosition, goalPosition):
+        """
+        This function takes in a map, the robot's position and the goal.
+        Returns a point that is along the generated path, towards the goalPosition.
+
+        :param givenMap: The current map
+        :param currentPosition: The current position of the robot
+        :param goalPosition: The goal the robot is trying to path to
+        :return travelPoint: Returns the point we're actually trying to go to.
+        """
         try:
             path = self._getPath(givenMap, currentPosition, goalPosition)
+            path.reverse()
 
             # f = open("pathInfo.txt","r+")
             # for i in path:
             #     x,y = i
             #     f.write("The point was: "+str(i)+" and it's value was "+str(givenMap[y][x]))
-            #
             # f.close()
+
+            if len(path) > 40: backUpDist = 20
+            else: backUpDist = 10
+
             print "The passed point is: ", currentPosition
             travelPoint = path.pop()
             x,y = travelPoint
@@ -44,22 +57,29 @@ class PathPlanner():
             while len(path) > 0 and not rospy.is_shutdown():
                 print "Looking for a value..."
                 if givenMap[int(y)][int(x)] >= 0:
-                    counter = counter + 1
-                    if counter > 3:
+                    counter+=1
+                    if counter > backUpDist:
                         print "Your point is: ", (int(x),int(y)), givenMap[int(y)][int(x)]
                         return travelPoint
                 else:
                     counter = 0
-                    travelPoint = path.pop()
-                    x,y = travelPoint
+                travelPoint = path.pop()
+                x,y = travelPoint
             raise PathPlannerException("Failed to find a path")
         except Exception,e:
             print "Something went wrong: "
             raise e
 
 
-
     def _getWaypoint(self, givenMap, start, goal):
+        """
+        This function gets waypoints where there are changes in direction along a pathway.
+        Depreciated code, because Troy loves Odell
+
+        :param givenMap:
+        :param start:
+        :param goal:
+        """
 
         pathToNodify = self._getPath(givenMap, start, goal) # Get path from A*
         nodePath = []  # What will become the path of only relevant nodes.
@@ -86,7 +106,12 @@ class PathPlanner():
         :param start:
         :return: list of points (x,y touples) that is the path to take to the goal
         """
-        came_from = self._aStarSearch(givenMap, start, goal)          ## Get dictionary from astar
+        try:
+            came_from = self._aStarSearch(givenMap, start, goal)          ## Get dictionary from astar
+        except PathPlannerException,e:
+            print "Path planning exception when trying to find path"
+            return false
+
         path = [goal]                      ## Initialize path
 
         ## Prime the statements for iterating to the end of the path
