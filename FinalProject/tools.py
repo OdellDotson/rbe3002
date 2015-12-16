@@ -110,6 +110,14 @@ def lMaptoLLMap(lMap, height, width):
         map.append(new_list)
     return map
 
+def llMaptoLMap(llMap, height, width):
+    map = []
+    for row in llMap:
+        map.extend(row)
+    return map
+
+
+
 def getNeighbors( x, y, givenMap, threshold=99):
         """
         This get's the neighbors of a specific point on the map. This function preemptive removes squares with
@@ -134,7 +142,7 @@ def getNeighbors( x, y, givenMap, threshold=99):
         for move in gen_neighbors:
             tx, ty = move
             try:
-                if givenMap[ty][tx] < threshold:
+                if  givenMap[ty][tx] < threshold:
                     goodNeighbors.append(move)
             except IndexError:
                 continue
@@ -224,6 +232,30 @@ def findClosest(listOfPoints, goalPoint):
 
     _,pt = pq.get()
     return pt
+
+
+def inRadius(point1, point2, radius):
+    """
+    Returns True if the point is within the radius of point2
+
+    :param point1: (x,y) touple of a point on a map
+    :param point2:
+    :param radius: int() in the map scope
+    :return:
+    """
+    dist = distFormula(point1, point2)
+
+    return dist <= radius
+
+
+def inRadiusOfPoints(point1, listOfPoints, radius):
+    for point in listOfPoints:
+        if inRadius(point1, point, radius):
+            return True
+    return False
+
+
+
 
 def maptToGlobal(value, valPose, width):
     """

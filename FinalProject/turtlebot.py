@@ -62,6 +62,8 @@ class turtlebot():
         self._startupSpinVel = 0.5
         self._moveError = False
         self._moving = False
+        self._failedList = []
+        self._recovery = 0
 
         ## After creation, wait 1 second in order to ensure that your
         self.sleeper = rospy.Duration(1)
@@ -95,9 +97,11 @@ class turtlebot():
             raise NotImplementedError("The result == 2 occured and a response is not implemented")
         elif result == 3:
             print "Robot has arrived at it's destination"
+            self._failedList = []
             self._moving = False
         elif result == 4:
             print "The Robot cannot reach the position you wish to go to, please try again"
+            self._failedList.append((self.frontierX,self.frontierY))
             self._moving = False
             self._moveError = True
         else:
@@ -174,11 +178,11 @@ class turtlebot():
         startX,startY = start
 
         print "Running 'startupSpin' algorithm."
-        locations = [(startX-1,startY),
-                     (startX,startY-1),
-                     (startX+1,startY),
-                     (startX,startY+1),
-                     (startX, startY)]
+        locations = [(startX-1,startY)]
+                     # (startX,startY-1),
+                     # (startX+1,startY),
+                     # (startX,startY+1),
+                     # (startX, startY)]
         for point in locations:
             x,y = point
             self.driveTo(x,y,None)
@@ -202,6 +206,7 @@ class turtlebot():
         :return:
         """
         print "\t ------- Recovery Mode ---------"
+        rospy.sleep(0.5)
         self.startupSpin(sleepTime=1)
         try:
             self.findFrontier()
@@ -258,9 +263,10 @@ class turtlebot():
             print "This map is difficult, let me think..."
             rospy.sleep(5)
             print "Ok, I think I'm ready to try and drive somewhere."
-            self.findFrontier(verbose = False)
-
-            self.driveTo(self.frontierX,self.frontierY,None)
+            self._failedList = []
+            # self.findFrontier(verbose = False)
+            #
+            # self.driveTo(self.frontierX,self.frontierY,None)
             while self._notDoneExploring and not (rospy.is_shutdown()):
                 self.findFrontier()
                 self.driveTo(self.frontierX,self.frontierY,None)

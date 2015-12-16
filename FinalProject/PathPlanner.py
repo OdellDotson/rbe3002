@@ -21,6 +21,14 @@ class PathPlanner():
         """
         try:
             val = self._getPath(givenMap, currentPosition,goalPosition)
+            if val == []: return False
+
+            # val.reverse()
+            # for i,point in enumerate(val):
+            #     x,y = point
+            #     if givenMap[int(y)][int(x)] == -1 and i > int(len(val)/3):
+            #         return False
+
             return True
         except PathPlannerException,e:
             print "Failed in canTravelTo, exception: ", e
@@ -39,7 +47,7 @@ class PathPlanner():
         """
         try:
             path = self._getPath(givenMap, currentPosition, goalPosition)
-            path.reverse()
+            # path.reverse()
 
             # f = open("pathInfo.txt","r+")
             # for i in path:
@@ -47,15 +55,16 @@ class PathPlanner():
             #     f.write("The point was: "+str(i)+" and it's value was "+str(givenMap[y][x]))
             # f.close()
 
-            if len(path) > 40: backUpDist = 20
-            else: backUpDist = 10
+            #if len(path) > 40: backUpDist = 20
+            #else: backUpDist = 10
+
+            backUpDist = int(len(path)/3)
 
             print "The passed point is: ", currentPosition
             travelPoint = path.pop()
             x,y = travelPoint
             counter = 0
             while len(path) > 0 and not rospy.is_shutdown():
-                print "Looking for a value..."
                 if givenMap[int(y)][int(x)] >= 0:
                     counter+=1
                     if counter > backUpDist:
@@ -110,7 +119,7 @@ class PathPlanner():
             came_from = self._aStarSearch(givenMap, start, goal)          ## Get dictionary from astar
         except PathPlannerException,e:
             print "Path planning exception when trying to find path"
-            return false
+            return []
 
         path = [goal]                      ## Initialize path
 
@@ -144,6 +153,7 @@ class PathPlanner():
         frontier = Queue.PriorityQueue()
         frontier.put((0, start))            ## Put takes a touple of priority, value
         goalX, goalY = goal
+
 
         came_from = {}
         cost_so_far = {}

@@ -149,17 +149,6 @@ class FME():
         return edgeNeighbors
 
 
-    def findSafePoint(self,goalLocation, givenLocation): # givenMap, threshold = 50): (Why were these here? what's going on?)
-        """
-        This function finds a safe point to path to on the givenMap that is below the given threshold.
-        If it is not, this will get neighbors until there is a safe value found to map to.
-        If it looks for too long, the function will just fail and give back the goal location after raising an error.
-        """
-        cx,cy = givenLocation
-        gx,gy = goalLocation
-
-        return (cx+gx)/2,(cy+gy)/2
-
 
     def findMidpoints(self,listOfFrontiers):
         """
@@ -187,7 +176,7 @@ class FME():
         return midpoint_list
 
 
-    def sortFrontiers(self, frontierList, heuristic, locationTouple, verbose = True):
+    def sortFrontiers(self, frontierList, heuristic, givenMap, verbose = True):
         """
         :param frontierList: List of Frontiers , list of list of <(x,y) touple > in grid cell location on the map
         :param heuristic: function that only requires a single frontier to make a decision.
@@ -207,13 +196,35 @@ class FME():
                 x,y = point
                 x_sum = x_sum + x
                 y_sum = y_sum + y
-            midP = (math.floor(x_sum/total),math.floor(y_sum/total))
-            pq.put((-heuristic(frontier),(midP,frontier)))
+            midP = (int(math.floor(x_sum/total)),int(math.floor(y_sum/total)))
+
+            safeMidP = self.findSafePoint(midP,givenMap)
+
+            pq.put((-heuristic(frontier),(safeMidP,frontier)))
             x_sum,y_sum = 0,0
             total = 0
 
         if verbose: print "A priority queue of frontier midpoints has been created"
         return pq
+
+
+
+    def findSafePoint(self, point, givenMap):
+        x,y = point
+        neighborList = tools.getNeighbors(x,y,givenMap,102)
+
+        for elt in neighborList:
+            print "I'm here man... "
+            tx, ty = elt
+            if givenMap[ty][tx] == 100 or givenMap[ty][tx] ==-1:
+                nn=tools.getNeighbors(tx,ty,givenMap,102)
+                for i in nn:
+                    if not (i in neighborList):
+                        neighborList.append(i)
+            else:
+                return (tx, ty)
+        raise FrontierException("Explored the whole map and found no safe spots. Get rekt")
+
 
 # a = FME()
 # a.test()

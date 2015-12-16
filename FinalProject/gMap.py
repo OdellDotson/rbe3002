@@ -3,6 +3,7 @@ __author__ = 'Troy Hughes'
 import rospy
 import tools
 import tf
+from nav_msgs.msg import OccupancyGrid
 import rVizPainter as rvptr
 from turtleExceptions import FrontierException
 import FullMapExplorer as FME
@@ -27,6 +28,7 @@ class gMap():
         self._pose = None
         self._mapSet = False
         self._map_list = tf.TransformListener()
+        self._DMap = rospy.Publisher('/DAMPA', OccupancyGrid, queue_size=1)
 
         #### Contained Classes ####
         ##   Visualiser Class  ##
@@ -65,16 +67,20 @@ class gMap():
         :return:
         """
 
-        self._map = tools.lMaptoLLMap(msg.data,
+        newMap = tools.lMaptoLLMap(msg.data,
                                       msg.info.height,
                                       msg.info.width)#Updates the map with the map data, height and width.
-        for i in xrange(6): # Troy likes the number 3, TODO: Is 3 actually the width of the robot?
-            self._map = tools.dialateOccupancyMap(self._map, len(self._map[0]),len(self._map))
+        for i in xrange(2): # Troy likes the number 3, TODO: Is 3 actually the width of the robot?
+            newMap = tools.dialateOccupancyMap(newMap, len(self._map[0]),len(self._map))
+        self._map = newMap
         self._max_h = msg.info.height#Updates max height
         self._max_w = msg.info.width#Updates max width
         self._res = msg.info.resolution
         self._pose = msg.info.origin#Updates the pose to be origin
         self._mapSet = True
+
+        msg.data = tools.llMaptoLMap(self._map, self._max_h, self._max_w)
+        self._DMap.publish(msg)
         self._updateLocation()#Updates the location
 
 
@@ -139,12 +145,13 @@ class gMap():
             frontierList = self.getFrontierList(verbose)
         except FrontierException,e:
             print "You are done exploring"
-            return (self.current_x,self.current_y, True)
+            raise FrontierException("getFrontierList threw a frontier exception")
+            # return (self.current_x,self.current_y, True)
 
         ## Picks the frontier based off the passed heuristic function.
         currentMapPosition = (self.current_x,self.current_y)
 
-        frontierQueue = self.FE.sortFrontiers(frontierList, self.FE.frontierSize, currentMapPosition)
+        frontierQueue = self.FE.sortFrontiers(frontierList, self.FE.frontierSize, self._map)
 
         nextFrontier = None
         frontierPoint = None
@@ -153,15 +160,22 @@ class gMap():
             queueItem = frontierQueue.get()
             p,frontierInfo = queueItem
             frontierPoint,frontier = frontierInfo
-            if self.PP.canTravelTo(self._map,currentMapPosition,frontierPoint):
+            x,y = frontierPoint
+            if self._map[int(y)][int(x)] == 100:
+                raise RuntimeError("Fuck everything")
+            decision = self.PP.canTravelTo(self._map,currentMapPosition,frontierPoint)
+            print "Your decision is: ",decision
+
+            if decision:
                 path = self.PP._getPath(self._map, currentMapPosition, frontierPoint)
                 nextFrontier = frontierPoint
                 self.paintFrontier(frontier)
-                ## self.paintFrontier(path)
+                self.paintPath(path)
                 break
         if nextFrontier is None:
             print "You are done exploring"
-            return (self.current_x,self.current_y, True)
+            raise FrontierException("nextFrontier is None, therefore you are done...")
+
 
         if verbose: print "Your frontier point is: " ,frontierPoint
         if verbose: print "The global frontier popint is: ", self.convertMapToGlobal(frontierPoint)
