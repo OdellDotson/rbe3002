@@ -285,6 +285,24 @@ class gMap():
             pass
 
 
+
+    def getNavFrontiers(self, verbose=False):
+        try:
+            flist = self.getFrontierList(verbose)
+        except FrontierException,e:
+            print 'getFrontierList has thrown an acception'
+            raise e
+
+        cpos = (self.current_x, self.current_y)
+
+        fq = self.FE.queueMaker(flist, self._map, cpos, verbose)
+        return fq
+
+
+
+
+
+
 def testPainter():
     """
     This function is for testing the painter. Z

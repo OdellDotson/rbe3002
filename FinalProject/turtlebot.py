@@ -178,11 +178,11 @@ class turtlebot():
         startX,startY = start
 
         print "Running 'startupSpin' algorithm."
-        locations = [(startX-1,startY)]
-                     # (startX,startY-1),
-                     # (startX+1,startY),
-                     # (startX,startY+1),
-                     # (startX, startY)]
+        locations = [(startX-1,startY),
+                     (startX,startY-1),
+                     (startX+1,startY),
+                     (startX,startY+1),
+                     (startX, startY)]
         for point in locations:
             x,y = point
             self.driveTo(x,y,None)
@@ -210,6 +210,24 @@ class turtlebot():
         self.startupSpin(sleepTime=1)
         try:
             self.findFrontier()
+            self._moveError = False
+        except Exception, e:
+            print "You got an exception"
+            print e
+        return
+
+    def _recoverDuh(self):
+        """
+        This is the recovery mode for the robot. This function will handle when there is a move error.
+
+        This function should ensure that there are frontiers that can be found, and then move forward.
+
+        :return:
+        """
+        print "\t ------- Recovery Mode ---------"
+        rospy.sleep(0.5)
+        self.startupSpin(sleepTime=1)
+        try:
             self._moveError = False
         except Exception, e:
             print "You got an exception"
@@ -289,5 +307,80 @@ class turtlebot():
             pass
         print "Terminating"
 
+    def auxillary(self):
+        print "Starting auxillary"
+        while not self.map.doneSetup() and not (rospy.is_shutdown()):
+            rospy.sleep(0.1)
+        print "System is prepaired to start running"
+
+        try:
+
+            self._notDoneExploring = True
+            self.startupSpin()
+            print "This map is difficult, let me think..."
+            rospy.sleep(5)
+            print "Ok, I think I'm ready to try and drive somewhere."
+
+            counter = 0
+
+            while self._notDoneExploring and not (rospy.is_shutdown()):
+                fq = self.map.getNavFrontiers(verbose = True)
+
+
+                while not fq.empty() and not rospy.is_shutdown():
+                    queueItem = fq.get()
+                    p,frontierInfo = queueItem
+                    frontierPoint,frontier = frontierInfo
+                    self.map.paintFrontier(frontier)
+                    drivePoint = self.map.convertMapToGlobal(frontierPoint)
+                    dx,dy = drivePoint
+
+                    self.driveTo(dx,dy, None)
+
+                    while self._moving and (not self._moveError) and not(rospy.is_shutdown()):
+                        rospy.sleep(0.1)
+
+                    ## If the robot quit the loop because there's a move error:
+                    # if self._moveError:
+                    #     self._moveError = False
+                    #     try:
+                    #         path = self.map.PP._getPath(self.map._map,
+                    #                                     (self.map.current_x,self.map.current_y),
+                    #                                     (dx,dy))
+                    #         travelPoint = self.map.PP.frontierToTravelPoint(self.map._map,
+                    #                                                     (self.map.current_x,self.map.current_y),
+                    #                                                     (dx,dy))
+                    #         tx,ty = travelPoint
+                    #         self.driveTo(tx,ty, None)
+                    #         while self._moving and (not self._moveError) and not(rospy.is_shutdown()):
+                    #             rospy.sleep(0.1)
+                    #     except Exception,e:
+                    #         print "Something went wrong and IDK what..."
+                    #         print e
+                    if self._moveError:
+                        self._moveError = False
+                        continue
+
+                    break
+                if not fq.empty():
+                    counter = 0
+
+                if fq.empty():
+                    self._recoverDuh()
+                    counter = counter +1
+
+                if fq.empty() and counter == 4:
+                    self._notDoneExploring = False
+                rospy.sleep(4)
+
+            print "Frontiers Explored,"
+
+        except rospy.ROSInterruptException:
+            pass
+        print "Terminating"
+
+
+
+
 Turtle = turtlebot("Spanish Inquisition")
-Turtle.main()
+Turtle.auxillary()

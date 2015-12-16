@@ -226,5 +226,31 @@ class FME():
         raise FrontierException("Explored the whole map and found no safe spots. Get rekt")
 
 
+
+    def queueMaker(self, frontierList, givenMap, currentPosition, verbose = False):
+        if verbose: print "Starting ot sort the frontiers"
+        if len(frontierList) == 0:  raise Exception("Passed in an empty frontier list!")
+
+        x_sum,y_sum = 0,0
+        total = 1
+        pq = Queue.PriorityQueue()
+
+        for frontier in frontierList:
+            for i,point in enumerate(frontier):
+                total = i
+                x,y = point
+                x_sum = x_sum + x
+                y_sum = y_sum + y
+            midP = (int(math.floor(x_sum/total)),int(math.floor(y_sum/total)))
+            hVal = len(frontier) + tools.distFormula(currentPosition, midP)
+
+            pq.put((-hVal,(midP,frontier)))
+            x_sum,y_sum = 0,0
+            total = 0
+
+        if verbose: print "A priority queue of frontier midpoints has been created"
+        return pq
+
+
 # a = FME()
 # a.test()
