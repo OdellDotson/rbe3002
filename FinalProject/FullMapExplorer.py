@@ -236,13 +236,16 @@ class FME():
         pq = Queue.PriorityQueue()
 
         for frontier in frontierList:
-            for i,point in enumerate(frontier):
-                total = i
-                x,y = point
-                x_sum = x_sum + x
-                y_sum = y_sum + y
-            midP = (int(math.floor(x_sum/total)),int(math.floor(y_sum/total)))
-            hVal = len(frontier) + tools.distFormula(currentPosition, midP)
+            # for i,point in enumerate(frontier):
+            #     total = i
+            #     x,y = point
+            #     x_sum = x_sum + x
+            #     y_sum = y_sum + y
+            # midP = (int(math.floor(x_sum/total)),int(math.floor(y_sum/total)))
+            # hVal = len(frontier) + tools.distFormula(currentPosition, midP)
+
+            midP = frontier[(int(len(frontier))/2)-1]
+            hVal = len(frontier)
 
             pq.put((-hVal,(midP,frontier)))
             x_sum,y_sum = 0,0

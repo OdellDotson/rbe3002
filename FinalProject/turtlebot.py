@@ -369,7 +369,7 @@ class turtlebot():
                     self._recoverDuh()
                     counter = counter +1
 
-                if fq.empty() and counter == 4:
+                if fq.empty() and counter == 2:
                     self._notDoneExploring = False
                 rospy.sleep(4)
 
