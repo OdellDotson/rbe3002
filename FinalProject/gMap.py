@@ -9,6 +9,7 @@ from turtleExceptions import FrontierException
 import FullMapExplorer as FME
 import PathPlanner as PP
 
+
 class gMap():
     def __init__(self, name, goalTopic):
         """
@@ -17,11 +18,11 @@ class gMap():
         :param goalTopic: <ROSTOPIC formatted String> Ex: '/someTopic'
         :return:
         """
-        ## Location Information
+        # Location Information
         self.current_x, self.current_y, self.current_theta = None, None, None
         self._currentSet = False
 
-        ## Map Information
+        # Map Information
         self._map = [[]]
         self._height = 0
         self._width = 0
@@ -29,35 +30,36 @@ class gMap():
         self._mapSet = False
         self._map_list = tf.TransformListener()
         self._DMap = rospy.Publisher('/DAMPA', OccupancyGrid, queue_size=1)
+        self._max_h = None  # unknown value, should ALWAYS be read in. We should really have error checking for this.
+        self._max_w = None  # ^
+        self._res = None  # ^
 
-        #### Contained Classes ####
-        ##   Visualiser Class  ##
+        # Contained Classes ####
+        #   Visualiser Class  ##
         self.painter = rvptr.rVizPainter(name + " Painter", 0.05)
         self.goalTopic = goalTopic
         self.painter.addPainter(self.goalTopic)
         self.painter.addPainter("/FRONTIER")
         self.painter.addPainter("/PATH")
 
-        ##   Frontier Explorer ##
-        self.FE = FME.FME(0.05,0.352)
+        #   Frontier Explorer #
+        self.FE = FME.FME(0.05, 0.352)
 
-        ##   Path Planner      ##
+        #   Path Planner      #
         self.PP = PP.PathPlanner(name+" Path Planner")
-
-
 
     def doneSetup(self):
         """
         This function checks if the map and robot's position are initialized.
         """
-        if self._mapSet is False:#If the map is not yet set up.
+        if self._mapSet is False: # If the map is not yet set up.
             print "Map is not set"
             return False
-        if self.current_x is None or self.current_y is None or self.current_theta is None:#if any of the robot's x y theta is unset
+        if self.current_x is None or self.current_y is None or self.current_theta is None:  # if any of the robot's x y theta is unset
             print "Waiting on location data for robot"
             self._updateLocation()
             return False
-        print 'gMap is properly configured'#prints that the map and robot are correctly configured.
+        print 'gMap is properly configured'  # prints that the map and robot are correctly configured.
         return True
 
     def updateMap(self, msg):
@@ -66,30 +68,28 @@ class gMap():
         :param msg:
         :return:
         """
+        newMap = tools.lMaptoLLMap(msg.data, msg.info.height, msg.info.width)
+        # Updates the map with the map data, height and width.
 
-        newMap = tools.lMaptoLLMap(msg.data,
-                                      msg.info.height,
-                                      msg.info.width)#Updates the map with the map data, height and width.
-        for i in xrange(2): # Troy likes the number 3, TODO: Is 3 actually the width of the robot?
+        for i in xrange(2):  # Dilates the map by a semi-arbitrary value.
             newMap = tools.dialateOccupancyMap(newMap, len(self._map[0]),len(self._map))
         self._map = newMap
-        self._max_h = msg.info.height#Updates max height
-        self._max_w = msg.info.width#Updates max width
+        self._max_h = msg.info.height  # Updates max height
+        self._max_w = msg.info.width  # Updates max width
         self._res = msg.info.resolution
-        self._pose = msg.info.origin#Updates the pose to be origin
+        self._pose = msg.info.origin  # Updates the pose to be origin
         self._mapSet = True
 
         msg.data = tools.llMaptoLMap(self._map, self._max_h, self._max_w)
         self._DMap.publish(msg)
         self._updateLocation()#Updates the location
 
-
     def _updateLocation(self):
         """
         Updates the robot's location on the map. :: All updated values will be in the map frame values.
         """
         try:
-            self._map_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(0.5))
+            self._map_list.waitForTransform('map', 'base_footprint', rospy.Time(0), rospy.Duration(1)) #Used 1 instead of 0.5
         except tf.Exception:
             print "Waiting for transform failed"
             self.current_x = 0
@@ -100,9 +100,9 @@ class gMap():
         (p, q) = self._map_list.lookupTransform("map", "base_footprint", rospy.Time(0))
         x, y, z = p
         self.current_theta = tools.normalizeTheta(q)
-        self.current_x = (tools.globalToMap(x,self._pose.position.x,self._res))
-        self.current_y = (tools.globalToMap(y,self._pose.position.y,self._res))
-        self.current_z = (tools.globalToMap(z,self._pose.position.z,self._res))
+        self.current_x = (tools.globalToMap(x, self._pose.position.x, self._res))
+        self.current_y = (tools.globalToMap(y, self._pose.position.y, self._res))
+        self.current_z = (tools.globalToMap(z, self._pose.position.z, self._res))
         self._currentSet = True
         # print "Your robots current location is ",self.current_x,self.current_y,self.current_theta
         return True
@@ -119,7 +119,7 @@ class gMap():
         if Verbose:
             print "Trying to find a new Frontier"
 
-            ## Get the list of frontiers that exist on the map
+            # Get the list of frontiers that exist on the map
             frontierList, dilatedMap = self.FE.getFrontierList(self._map)
             print 'The following will display the frontiers discovered'
 
@@ -146,20 +146,18 @@ class gMap():
         except FrontierException,e:
             print "You are done exploring"
             raise FrontierException("getFrontierList threw a frontier exception")
-            # return (self.current_x,self.current_y, True)
 
-        ## Picks the frontier based off the passed heuristic function.
+        # Picks the frontier based off the passed heuristic function.
         currentMapPosition = (self.current_x,self.current_y)
 
         frontierQueue = self.FE.sortFrontiers(frontierList, self.FE.frontierSize, self._map)
 
         nextFrontier = None
         frontierPoint = None
-        path = None
         while not frontierQueue.empty() and not rospy.is_shutdown():
             queueItem = frontierQueue.get()
-            p,frontierInfo = queueItem
-            frontierPoint,frontier = frontierInfo
+            p, frontierInfo = queueItem
+            frontierPoint, frontier = frontierInfo
             x,y = frontierPoint
             if self._map[int(y)][int(x)] == 100:
                 raise RuntimeError("Fuck everything")
@@ -167,7 +165,7 @@ class gMap():
             print "Your decision is: ",decision
 
             if decision:
-                path = self.PP._getPath(self._map, currentMapPosition, frontierPoint)
+                path = self.PP._getPath(self._map, currentMapPosition, frontierPoint) # @TODO: Don't access protected info
                 nextFrontier = frontierPoint
                 self.paintFrontier(frontier)
                 self.paintPath(path)
@@ -176,13 +174,11 @@ class gMap():
             print "You are done exploring"
             raise FrontierException("nextFrontier is None, therefore you are done...")
 
-
         if verbose: print "Your frontier point is: " ,frontierPoint
         if verbose: print "The global frontier popint is: ", self.convertMapToGlobal(frontierPoint)
 
         print "Before running: ", frontierPoint
 
-        # self.paintGoal(frontierPoint)
         travelPoint = self.PP.frontierToTravelPoint(self._map,currentMapPosition,frontierPoint)
         print "Frontier Point is: ", frontierPoint
         print "Travel Point is: ", travelPoint
@@ -193,8 +189,8 @@ class gMap():
             print "Your frontier midpoint is: ", frontierPoint
 
         globalPoint = self.convertMapToGlobal(travelPoint)
-        x,y = globalPoint
-        return x,y,False
+        x, y = globalPoint
+        return x, y, False
 
     def setLegalMoveBaseGoal(self,point, threshold=65):
         """
@@ -202,12 +198,12 @@ class gMap():
 
         :param Point : <x,y> touple representing the locaiton in the gMap
         """
-        frontierMap = tools.dialateOccupancyMap(self._map,len(self._map),len(self._map[0]))
+        frontierMap = tools.dialateOccupancyMap(self._map, len(self._map), len(self._map[0]))
         for i in xrange(3):
-            frontierMap = tools.dialateOccupancyMap(frontierMap,len(frontierMap),len(frontierMap[0]))
+            frontierMap = tools.dialateOccupancyMap(frontierMap, len(frontierMap), len(frontierMap[0]))
 
-        px,py = point
-        self.painter.paintGoal(self.goalTopic,self.convertMapToGlobal(point))
+        px, py = point
+        self.painter.paintGoal(self.goalTopic, self.convertMapToGlobal(point))
 
         if threshold > frontierMap[py][px] > -1:
             return point
@@ -225,7 +221,7 @@ class gMap():
         for f in frontier:
             globalFrontier.append(self.convertMapToGlobal(f))
 
-        self.painter.paint('/FRONTIER',globalFrontier)
+        self.painter.paint('/FRONTIER', globalFrontier)
 
     def paintPath(self, path):
         """
@@ -243,7 +239,7 @@ class gMap():
 
     def paintGoal(self, goal, isGlobal=False):
         if isGlobal: self.painter.paintGoal(self.goalTopic, goal)
-        else: self.painter.paintGoal(self.goalTopic, self.convertMapToGlobal(goal))  ## Default case
+        else: self.painter.paintGoal(self.goalTopic, self.convertMapToGlobal(goal))  # # Default case
 
 
 
@@ -252,18 +248,18 @@ class gMap():
         """
         Wrapper for the map points to global points
         """
-        return tools.mapPointToGlobal(point,(self._pose.position.x,self._pose.position.y,None),self._res)
+        return tools.mapPointToGlobal(point, (self._pose.position.x, self._pose.position.y, None), self._res)
 
-    def convertGlobalToMap(self,point):
+    def convertGlobalToMap(self, point):
         """
         Wrapper for global points to map points
         """
-        return tools.globalPointToMap(point,(self._pose.position.x,self._pose.position.y,None),self._res)
+        return tools.globalPointToMap(point, (self._pose.position.x, self._pose.position.y, None), self._res)
 
 
 
 
-    def getRobotPosition(self):#THIS IS THE PART WHERE FRANCE INVADES
+    def getRobotPosition(self):  # THIS IS THE PART WHERE FRANCE INVADES, who wrote this comment?
         """
         Makes sure that the robot's x and y are known, and then returns them if it is.
         """
@@ -279,14 +275,20 @@ class gMap():
         return self.current_theta
 
     def main(self):
+        """
+        Because we need a main I guess.
+        """
         try:
             pass
         except rospy.ROSInterruptException:
             pass
 
-
-
     def getNavFrontiers(self, verbose=False):
+        """
+        Gets the list of frontiers, then makes the queue of that list of frontiers.
+
+        :return: Queue This is the queue (Using A* heuristics I believe?) of frontiers to explore.
+        """
         try:
             flist = self.getFrontierList(verbose)
         except FrontierException,e:

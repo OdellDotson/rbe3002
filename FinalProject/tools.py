@@ -7,8 +7,9 @@ import Queue
 from nav_msgs.msg import GridCells
 from geometry_msgs.msg import Point
 
-## The resolution of the '/map' cells
-cell = 0.3 ## 0.3 m/cell
+# # The resolution of the '/map' cells, used for a lot of tool-based calculations.
+cell = 0.3 # # 0.3 m/cell
+
 
 def distFormula(point1, point2):
     """
@@ -17,15 +18,12 @@ def distFormula(point1, point2):
     :return: Returns Distance between two points
     """
     # print "DistForm: ",point1, point2
-
     x1, y1 = point1
     x2, y2 = point2
 
     return math.sqrt((x1-x2)**2 + (y1-y2)**2)
 
-"""
-    euler_from_quaternion to spin in a circle.
-"""
+
 def normalizeTheta(quaternian_touple):
     """
     This takes in a quaternian touple and returns a 0 to 2Pi value for theta
@@ -34,20 +32,21 @@ def normalizeTheta(quaternian_touple):
     :return: a normalized theta from this function
     """
     euler_angles = tf.transformations.euler_from_quaternion(quaternian_touple)
-    ## This will create a euler angle list from the quaternion information
-    ## it will be in order of [Roll, Pitch, Yaw] >> Yaw is the rotation about the
-    ##     ## z axis where the robot is driving in the xy plane.
-    un_normalized_theta = euler_angles[2] ## This theta goes from [0,pi,-pi,0] where [0:0, pi:179 degrees, -pi:181 degrees]
+    # # This will create a euler angle list from the quaternion information
+    # # it will be in order of [Roll, Pitch, Yaw] >> Yaw is the rotation about the
+    # #     ## z axis where the robot is driving in the xy plane.
+    un_normalized_theta = euler_angles[2]  # This theta goes from [0,pi,-pi,0] where[0:0,pi:179 degrees,-pi:181 degrees]
 
     # Fixes the [0,pi,-pi,0] problem, translates to [0,2pi] over 360
-    if un_normalized_theta > 0:normalized_theta = un_normalized_theta
-    else: normalized_theta = (math.pi + (un_normalized_theta)) + math.pi
+    if un_normalized_theta > 0: normalized_theta = un_normalized_theta
+    else: normalized_theta = math.pi + un_normalized_theta + math.pi
 
     return normalized_theta
 
+
 def makeGridCells(name, width, height, grid_cells=[]):
     """
-
+    This function creates grid cells based on the given height and width.
     :param name: of the topic on which the grid cells are from
     :param width: of a grid cell
     :param height: of a grid cell
@@ -62,15 +61,15 @@ def makeGridCells(name, width, height, grid_cells=[]):
     return cells
 
 
-def makePoint(x,y,z=0):
+def makePoint(x, y, z=0):
     """
     The Point.n values should usually be <Location>*<Size> however in this case
     it is <Location + offsett>*<Size>. This is why the function is so strange. Used
     Guess and check for the offset.
     """
     point = Point()
-    point.x = (x+(0.3)*7)*0.3
-    point.y = (y+(0.3)*1)*0.3
+    point.x = (x+0.3*7)*0.3
+    point.y = (y+0.3*1)*0.3
     point.z = z
 
     return point
@@ -78,14 +77,13 @@ def makePoint(x,y,z=0):
 def publishListfromTouple(location_list):
     """
     This creates a list of points from a list of tuples
-
     :param location_list: List of tuples
     :return: list of points
     """
     ret_list = []
     for i in location_list:
-        x,y = i
-        ret_list.append(makePoint(x,y,0))
+        x, y = i
+        ret_list.append(makePoint(x, y, 0))
 
     return ret_list
 
@@ -111,6 +109,9 @@ def lMaptoLLMap(lMap, height, width):
     return map
 
 def llMaptoLMap(llMap, height, width):
+    """
+    Transfers one map type to another. We can't remember which, but it works!
+    """
     map = []
     for row in llMap:
         map.extend(row)
@@ -142,7 +143,7 @@ def getNeighbors( x, y, givenMap, threshold=99):
         for move in gen_neighbors:
             tx, ty = move
             try:
-                if  givenMap[ty][tx] < threshold:
+                if givenMap[ty][tx] < threshold:
                     goodNeighbors.append(move)
             except IndexError:
                 continue
@@ -156,7 +157,7 @@ def getNeighbors( x, y, givenMap, threshold=99):
             """
         return goodNeighbors  # State farm joke goes here
 
-def dialateOccupancyMap(givenMap,max_x,max_y):
+def dialateOccupancyMap(givenMap, max_x, max_y):
     """
     This function dialates the high value points on a map by 1.
 
@@ -166,48 +167,47 @@ def dialateOccupancyMap(givenMap,max_x,max_y):
     :param map:
     :return:
     """
-    def dialateNode(map,node,max_x,max_y):
+    def dialateNode(map, node, max_x, max_y):
         """
         This dialates one node on a map and returns the map.
-
-        :param map: A list of lists of intigers with min 0 and max 100
+        :param map: A list of lists of integers with min 0 and max 100
         :param node: x,y tuple of the location
         :param max_x: width of the map
         :param max_y: height of the map
         :return:
         """
-        x,y = node
-        gen_neighbors = [(x-1,y-1),             ## All possible neighbors
-                         (x+1,y+1),
-                         (x+1,y-1),
-                         (x-1,y+1),
-                         (x,y+1),
-                         (x,y-1),
-                         (x-1,y),
-                         (x+1,y)]
+        x, y = node
+        gen_neighbors = [(x-1, y-1),             # # All possible neighbors
+                         (x+1, y+1),
+                         (x+1, y-1),
+                         (x-1, y+1),
+                         (x, y+1),
+                         (x, y-1),
+                         (x-1, y),
+                         (x+1, y)]
 
         for n in gen_neighbors:
-            nx,ny = n
+            nx, ny = n
             if nx > max_x or ny > max_y or nx < 0 or ny < 0:
                 continue
             map[ny][nx] = 100
         return map
 
-    ## Get all the spaces with 100 as their value and put them in a list.
+    # # Get all the spaces with 100 as their value and put them in a list.
     taken_spaces = []
-    for y,row in enumerate(givenMap):
-        for x,column in enumerate(givenMap[0]):
+    for y, row in enumerate(givenMap):
+        for x, column in enumerate(givenMap[0]):
             try:
                 if givenMap[y-1][x-1] == 100:
-                    taken_spaces.append((x-1,y-1)) ## (x,y)
+                    taken_spaces.append((x-1,y-1)) # # (x,y)
                 max_x = x
                 max_y = y
-            except Exception,e:
-                print "X and Y are :", x,y
+            except Exception, e:
+                print "X and Y are :", x, y
                 raise e
-    ## Dialate all the spaces in the list.
+    # # Dialate all the spaces in the list.
     for space in taken_spaces:
-        givenMap = dialateNode(givenMap,space,max_x,max_y)
+        givenMap = dialateNode(givenMap, space, max_x, max_y)
 
     return givenMap
 
@@ -219,42 +219,38 @@ def findClosest(listOfPoints, goalPoint):
     :param goalPoint: <(x,y) touple>
     :return:
     """
-    gx,gy = goalPoint
+    gx, gy = goalPoint
 
     pq = Queue.PriorityQueue()
 
     for point in listOfPoints:
-        dist = distFormula(point,(gx,gy))
-        pq.put((dist,point))
+        dist = distFormula(point, (gx, gy))
+        pq.put((dist, point))
 
     if pq.empty():
         raise RuntimeError("Find Closest given an empty list")
 
-    _,pt = pq.get()
+    _, pt = pq.get()
     return pt
 
 
 def inRadius(point1, point2, radius):
     """
     Returns True if the point is within the radius of point2
-
     :param point1: (x,y) touple of a point on a map
     :param point2:
     :param radius: int() in the map scope
     :return:
     """
     dist = distFormula(point1, point2)
-
     return dist <= radius
 
 
-def inRadiusOfPoints(point1, listOfPoints, radius):
-    for point in listOfPoints:
+def inRadiusOfPoints(point1, list_points, radius):
+    for point in list_points:
         if inRadius(point1, point, radius):
             return True
     return False
-
-
 
 
 def maptToGlobal(value, valPose, width):
@@ -269,23 +265,24 @@ def maptToGlobal(value, valPose, width):
     """
     return (value*width) + valPose
 
-def mapPointToGlobal(point, xyzPose, width = 0.05):
-    x,y = point
-    xp,yp,zp = xyzPose
 
-    gx = maptToGlobal(x,xp,width)
-    gy = maptToGlobal(y,yp,width)
-    return (gx,gy)
+def mapPointToGlobal(point, xyzPose, width = 0.05):
+    x, y = point
+    xp, yp, zp = xyzPose
+
+    gx = maptToGlobal(x, xp, width)
+    gy = maptToGlobal(y, yp, width)
+    return (gx, gy)
 
 
 def globalToMap(value, valPose, width):
     return int(math.floor((value - valPose)/width))
 
-def globalPointToMap(point, xyzPose, width = 0.05):
-    x,y = point
-    xp,yp,zp = xyzPose
 
-    gx = globalToMap(x,xp,width)
-    gy = globalToMap(y,yp,width)
-    return (gx,gy)
+def globalPointToMap(point, xyzPose, width=0.05):
+    x, y = point
+    xp, yp, zp = xyzPose
 
+    gx = globalToMap(x, xp, width)
+    gy = globalToMap(y, yp, width)
+    return gx, gy

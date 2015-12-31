@@ -1,4 +1,4 @@
-__author__ = 'rbe'
+__author__ = 'Odell Dotson'
 
 
 import tools
@@ -8,13 +8,13 @@ import rospy
 from turtleExceptions import FrontierException
 
 
-class FME():
+class FME:
     def __init__(self, cellSize, robotSize):
         self.numDialations = int(math.ceil(robotSize/cellSize))+2
         self._minFrontierSize = 5
         self._frontierCacheName = 'FrontierFiles.txt'
 
-    def virtualGetFrontierList(self,fileName):
+    def virtualGetFrontierList(self, fileName):
         """
         This function retrieves the frontiers from a given file and returns the
         :param:fileName This is the file that we will retrieve our frontiers from. (Probably 'FrontierFiles.txt' if you forget.)
@@ -23,7 +23,6 @@ class FME():
         frontiers = f.read()
         frontierFile.close()
         return frontiers
-
 
     def getFrontierList(self,givenMap,cache=True):
         """
@@ -42,19 +41,18 @@ class FME():
                     if (x, y) in list:
                         isAlreadyFound = True
 
-
                 if self.isNodeFrontier(x, y, givenMap) and not isAlreadyFound:
                     frontier = []
 
                     nodesToExplore = []
-                    nodesToExplore.append((x,y))
+                    nodesToExplore.append((x, y))
 
                     while len(nodesToExplore) > 0:
                         currentNode = nodesToExplore.pop()
                         frontier.append(currentNode)
 
                         for n in self.getNeighborsFrontier(currentNode[0], currentNode[1], givenMap):
-                            if not n in frontier and not n in nodesToExplore:
+                            if n not in frontier and n not in nodesToExplore:
                                 nodesToExplore.append(n)
 
                     result.append(frontier)
@@ -65,11 +63,9 @@ class FME():
             if len(frontier) > self._minFrontierSize:
                 frontierList.append(frontier)
         if cache:
-            f = open(self._frontierCacheName,'r+')
+            f = open(self._frontierCacheName, 'r+')
             f.write(str(frontierList))
             f.close()
-
-
         return frontierList, givenMap
 
     def frontierSize(self, targetFrontier):
@@ -86,7 +82,7 @@ class FME():
         :param heuristic: function that only requires a single frontier to make a decision.
         :return:an (x,y) touple of the point to go to in grid cell location on the map
         """
-        cx,cy = locationTouple
+        cx, cy = locationTouple
         targetFrontier = frontierList[0]
 
         print "Trying to find the best frontier"
@@ -94,19 +90,19 @@ class FME():
         if len(frontierList) == 0:  # If there are no frontiers
             raise Exception("Passed in an empty frontier list!")
 
-        ## Select the largest frontier
+        # Select the largest frontier
         elif len(frontierList) != 1:
-            for elt in frontierList:# Assuming a larger Heuristic is better,
-                if heuristic(targetFrontier) < heuristic(elt):# Check if the next frontier is a better candidate for travel
+            for elt in frontierList:  # Assuming a larger Heuristic is better,
+                if heuristic(targetFrontier) < heuristic(elt):  # Check if the next frontier is a better candidate for travel
                     targetFrontier = elt
 
         print "Best frontier found, contains ", len(targetFrontier), " nodes"
 
-        ## Find the closest point on the frontier
+        # Find the closest point on the frontier
         currentTarget = targetFrontier[0]
         for elt in targetFrontier:
-            if tools.distFormula(elt, (cx,cy)) < tools.distFormula(currentTarget, (cx,cy)):
-                currentTarget = elt # Update which is the closest element in the target frontier.
+            if tools.distFormula(elt, (cx, cy)) < tools.distFormula(currentTarget, (cx,cy)):
+                currentTarget = elt  # Update which is the closest element in the target frontier.
         print "Closest point found at: ", currentTarget
         return currentTarget
 
@@ -129,7 +125,6 @@ class FME():
                     return True
         return False
 
-
     def getNeighborsFrontier(self, x, y, givenMap):
         """
         Returns all the neighbors of a given node that are frontier nodes
@@ -148,15 +143,13 @@ class FME():
 
         return edgeNeighbors
 
-
-
     def findMidpoints(self,listOfFrontiers):
         """
         Given a list of frontiers, this function will return a list of the midpoints of those frontiers, in the same order.
 
         :param listOfFrontiers: The list of frontiers for which to find midpoints.
         """
-        x_sum,y_sum = 0,0
+        x_sum, y_sum = 0, 0
         total = 0
         midpoint_list = []
 
@@ -164,14 +157,14 @@ class FME():
             raise FrontierException("When trying to find midpoints, there were no frontiers to search from.")
 
         for frontier in listOfFrontiers:
-            for i,point in enumerate(frontier):
+            for i, point in enumerate(frontier):
                 total = i
-                x,y = point
+                x, y = point
                 x_sum = x_sum + x
                 y_sum = y_sum + y
             midpoint_list.append((math.floor(x_sum/total),
                                   math.floor(y_sum/total)))
-            x_sum,y_sum = 0,0
+            x_sum, y_sum = 0, 0
             total = 0
         return midpoint_list
 
@@ -186,22 +179,22 @@ class FME():
         if verbose: print "Starting ot sort the frontiers"
         if len(frontierList) == 0:  raise Exception("Passed in an empty frontier list!")
 
-        x_sum,y_sum = 0,0
+        x_sum, y_sum = 0, 0
         total = 1
         pq = Queue.PriorityQueue()
 
         for frontier in frontierList:
-            for i,point in enumerate(frontier):
+            for i, point in enumerate(frontier):
                 total = i
-                x,y = point
+                x, y = point
                 x_sum = x_sum + x
                 y_sum = y_sum + y
-            midP = (int(math.floor(x_sum/total)),int(math.floor(y_sum/total)))
+            midP = (int(math.floor(x_sum/total)), int(math.floor(y_sum/total)))
 
-            safeMidP = self.findSafePoint(midP,givenMap)
+            safeMidP = self.findSafePoint(midP, givenMap)
 
-            pq.put((-heuristic(frontier),(safeMidP,frontier)))
-            x_sum,y_sum = 0,0
+            pq.put((-heuristic(frontier), (safeMidP, frontier)))
+            x_sum, y_sum = 0, 0
             total = 0
 
         if verbose: print "A priority queue of frontier midpoints has been created"
@@ -210,50 +203,33 @@ class FME():
 
 
     def findSafePoint(self, point, givenMap):
-        x,y = point
-        neighborList = tools.getNeighbors(x,y,givenMap,102)
+        x, y = point
+        neighborList = tools.getNeighbors(x, y, givenMap, 102)
 
         for elt in neighborList:
-            print "I'm here man... "
+            # print "I'm here man... "
             tx, ty = elt
-            if givenMap[ty][tx] == 100 or givenMap[ty][tx] ==-1:
-                nn=tools.getNeighbors(tx,ty,givenMap,102)
+            if givenMap[ty][tx] == 100 or givenMap[ty][tx] == -1:
+                nn=tools.getNeighbors(tx, ty, givenMap, 102)
                 for i in nn:
                     if not (i in neighborList):
                         neighborList.append(i)
             else:
-                return (tx, ty)
+                return tx, ty
         raise FrontierException("Explored the whole map and found no safe spots. Get rekt")
 
-
-
-    def queueMaker(self, frontierList, givenMap, currentPosition, verbose = False):
+    def queueMaker(self, frontierList, givenMap, currentPosition, verbose=False):
         if verbose: print "Starting ot sort the frontiers"
-        if len(frontierList) == 0:  raise Exception("Passed in an empty frontier list!")
+        if len(frontierList) == 0: raise Exception("Passed in an empty frontier list!")
 
-        x_sum,y_sum = 0,0
-        total = 1
+        x_sum, y_sum = 0,0
         pq = Queue.PriorityQueue()
 
         for frontier in frontierList:
-            # for i,point in enumerate(frontier):
-            #     total = i
-            #     x,y = point
-            #     x_sum = x_sum + x
-            #     y_sum = y_sum + y
-            # midP = (int(math.floor(x_sum/total)),int(math.floor(y_sum/total)))
-            # hVal = len(frontier) + tools.distFormula(currentPosition, midP)
-
             midP = frontier[(int(len(frontier))/2)-1]
             hVal = len(frontier)
 
-            pq.put((-hVal,(midP,frontier)))
-            x_sum,y_sum = 0,0
-            total = 0
+            pq.put((-hVal, (midP, frontier)))
 
         if verbose: print "A priority queue of frontier midpoints has been created"
         return pq
-
-
-# a = FME()
-# a.test()

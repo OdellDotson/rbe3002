@@ -12,7 +12,7 @@ from turtleExceptions import PainterException
 class rVizPainter():
     def __init__(self,name, gridSize):
         """
-        This funciton takes in the name (for logging purposes) and the size of a grid square. This class
+        This function takes in the name (for logging purposes) and the size of a grid square. This class
         assumes that all gridsquares that it will be painting to are in fact 'squares' and not 'rectangles'
 
         :param name: <string> name of the class
@@ -23,8 +23,6 @@ class rVizPainter():
         self._name_ = name
         self._painters = {}
         self._paintNodes = {}
-
-
 
     def addPainter(self,painterName):
         """
@@ -52,7 +50,6 @@ class rVizPainter():
 
         self._paintNodes[painterName].append(point)
 
-
     def paint(self,painterName, paintList=None):
         """
         This function is used to publish to Rviz and actually paint the lists.
@@ -69,7 +66,6 @@ class rVizPainter():
         if paintList is None: paintList = []
 
         pointList = self._paintListFromTouples(paintList)
-        # pointList.extend(self._paintListFromTouples(self._paintNodes[painterName]))
 
         CelltoPublish = GridCells()
         CelltoPublish.header.frame_id = '/map'
@@ -93,20 +89,20 @@ class rVizPainter():
         """
         def xfunc(val):
             return val
+
         def yfunc(val):
             return val
 
         ret_list = []
         for i in toupleList:
             point = Point()
-            x,y = i
+            x, y = i
             point.x = xfunc(x)
             point.y = yfunc(y)
             point.z = 0
             ret_list.append(point)
 
         return ret_list
-
 
     def paintGoal(self,painterName, point, dmap=False):
         expandString = ['(x+1,y)','(x-1,y)','(x,y+1)','(x,y-1)']
